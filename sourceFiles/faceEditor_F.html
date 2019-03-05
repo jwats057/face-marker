@@ -53,7 +53,6 @@ var scene, renderer, camera, control, sphereGeo;
 var divElem, divObj;
 var i = 1;
 var objects = [];
-
 init2();
 animate();
 
@@ -62,8 +61,8 @@ function init2()
 {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000); 
-    camera.position.z = 20;
-    
+    camera.position.z = 20;	
+	
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
@@ -73,7 +72,13 @@ function init2()
         onCameraChange();
     });
     
-	
+	var size = 10;
+var divisions = 10;
+
+var gridHelper = new THREE.GridHelper( size, divisions );
+scene.add( gridHelper );
+
+
 	// instantiate a loader
 var loader = new THREE.OBJLoader();
 
@@ -93,8 +98,11 @@ obje.traverse( function ( child ) {
 
 					} );
 					//obje.position.z = 80;
-					obje.position.set(1,.5,0);
+					//obje.position.set(1,.5,0);
 					//obje.scale.multiplyScalar(2.2);
+
+//fitCameraToObject(camera, obje, 2, control);
+/*
 					var ignore1 = new THREE.Vector3();
 var ignore2 = new THREE.Vector3();
 var front_vector = new THREE.Vector3();
@@ -106,11 +114,12 @@ camera.matrix.extractBasis ( ignore1, ignore2, front_vector );
 camera.position.copy(obje.position);
 var distance_from_object = -2;
 camera.position.addScaledVector(front_vector, -distance_from_object);
-var box = new THREE.Box3().setFromObject( obje );
-console.log( box.min, box.max, box.getSize() );
-					
+
 					camera.add(obje);
-		scene.add( obje );
+	var box = new THREE.BoxHelper( obje, 0xffff00 );
+	scene.add(box);
+*/	
+	scene.add( obje );
 
 	},
 	// called when loading is in progresses
@@ -445,6 +454,65 @@ function toScreenPosition(obj, camera)
         y: vector.y
     };
 
+}
+
+const fitCameraToObject = function ( camera, object, offset, controls ) {
+
+    offset = offset || 1.25;
+    var center = new THREE.Vector3();
+	var size = new THREE.Vector3();
+    const boundingBox = new THREE.Box3();
+
+    // get bounding box of object - this will be used to setup controls and camera
+    var box = boundingBox.setFromObject( object );
+
+    box.getCenter(center);
+
+    box.getSize(size);
+
+    // get the max side of the bounding box (fits to width OR height as needed )
+    const maxDim = Math.max( size.x, size.y, size.z );
+    const fov = camera.fov * ( Math.PI / 180 );
+    let cameraZ = Math.abs( maxDim / 4 * Math.tan( fov * 2 ) );
+
+    cameraZ *= offset; // zoom out a little so that objects don't fill the screen
+
+    camera.position.z = cameraZ;
+
+    const minZ = boundingBox.min.z;
+    const cameraToFarEdge = ( minZ < 0 ) ? -minZ + cameraZ : cameraZ - minZ;
+
+    camera.far = cameraToFarEdge * 3;
+    camera.updateProjectionMatrix();
+
+    if ( controls ) {
+
+      // set camera to rotate around center of loaded object
+      controls.target = center;
+
+      // prevent camera from zooming out far enough to create far plane cutoff
+      controls.maxDistance = cameraToFarEdge * 2;
+
+      controls.saveState();
+
+    } else {
+
+        camera.lookAt( center );
+	}
+   }
+   
+   function getCenterPoint(mesh) {
+    var middle = new THREE.Vector3();
+    var geometry = mesh.geometry;
+
+    geometry.computeBoundingBox();
+
+    middle.x = (geometry.boundingBox.max.x + geometry.boundingBox.min.x) / 2;
+    middle.y = (geometry.boundingBox.max.y + geometry.boundingBox.min.y) / 2;
+    middle.z = (geometry.boundingBox.max.z + geometry.boundingBox.min.z) / 2;
+
+    mesh.localToWorld( middle );
+    return middle;
 }
     
 }//]]> 
