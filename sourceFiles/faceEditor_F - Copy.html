@@ -83,7 +83,7 @@ scene.add( gridHelper );
 var loader = new THREE.OBJLoader();
 
 // load a resource
-
+var material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
 var light = new THREE.PointLight( 0xffffff, 1, 20 );
 light.position.set( 0, 0, 2 );
 scene.add(light);
@@ -92,43 +92,38 @@ loader.load(
 	'obj/face.obj',
 	// called when resource is loaded
 	function ( obje ) {
-	var material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true, wireframelinewidth:1} );
 obje.traverse( function ( child ) {
 
-						if ( child.isMesh ){
-							child.material = material;
-						}
+						//if ( child.isMesh ) child.material = material;
 
 					} );
 
-	//scene.add( obje );
+	scene.add( obje );
 	var bb = new THREE.Box3()
 	bb.setFromObject(obje);
 	bb.getCenter(control.target);
-	var cubeGeo = new THREE.Geometry().fromBufferGeometry( obje.children[0].geometry );
-	//var cubeGeo =  obje.children[0].geometry;//new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
+	cubeGeo = obje;
 /*Start of Spheres*/
     //cubeGeo = new THREE.SphereGeometry(1,7,7);
     sphereGeo = cubeGeo;
     var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true, wireframelinewidth:1} );
 
 
-    var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
+    var cubeMesh = new THREE.Mesh(sphereGeo.geometry, cubeMaterial);
     
 
     var eGeometry = new THREE.EdgesGeometry( cubeMesh.geometry );
-    var eMaterial = new THREE.LineBasicMaterial( { color: 0x00ff00, linewidth: 1 } );
+    var eMaterial = new THREE.LineBasicMaterial( { color: 0x00ff00, linewidth: 0.5 } );
     var edges = new THREE.LineSegments( eGeometry, eMaterial );
-    //cubeMesh.add( edges );
+    cubeMesh.add( edges );
 
     scene.add(cubeMesh);
 
-    console.log( "BufferGEometry:"+cubeMesh.geometry.isBufferGeometry );
-	//var ageometry = new THREE.Geometry().fromBufferGeometry( cubeMesh.geometry );
-    var edgelist = getEdges(cubeMesh.geometry);//cubeMesh.geometry
+
+    var edgelist = getEdges(cubeMesh.geometry);
     //console.log("edgelist: "+edgelist.length);
 
-/*
+
     for(var i=0; i<cubeMesh.geometry.vertices.length; i++)
     {
         eu = edgelist[i].filter(onlyUnique);
@@ -139,13 +134,13 @@ obje.traverse( function ( child ) {
         console.log("e: "+i+","+eu[j]);
         var cyMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
         var cylinder = cylinderMesh(cubeGeo.vertices[i], cubeGeo.vertices[eu[j]], cyMaterial);
-        //scene.add(cylinder);
-        //objects.push(cylinder);
+        scene.add(cylinder);
+        objects.push(cylinder);
 
       }
 
     }
-*/
+
 
     var sphereObjects = [];
     var sphereMeshes = [];
@@ -154,7 +149,7 @@ obje.traverse( function ( child ) {
     for(var i=0; i<cubeMesh.geometry.vertices.length; i++)
     {
 
-      var sphere = new THREE.SphereGeometry(.01, 7, 7);
+      var sphere = new THREE.SphereGeometry(4, 7, 7, 0);
       sphereObjects.push(sphere);
 
     }
