@@ -2,17 +2,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-</head>
-<body>
+
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <meta name="robots" content="noindex, nofollow">
   <meta name="googlebot" content="noindex, nofollow">
     <link rel="stylesheet" type="text/css" href="/css/result-light.css">
-	      <!--script type="text/javascript" src="js/three_2.js"></script-->
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/102/three.min.js"></script>
-      <script type="text/javascript" src="https://rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
-	  <!--script type="text/javascript" src="js/OBJLoader.js"></script-->
-	  <script type="text/javascript" src="https://rawgit.com/mrdoob/three.js/master/examples/js/loaders/OBJLoader.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/102/three.min.js"></script>
+    <script type="text/javascript" src="https://rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
+	<!--script type="text/javascript" src="js/OBJLoader.js"></script-->
+	<script type="text/javascript" src="https://rawgit.com/mrdoob/three.js/master/examples/js/loaders/OBJLoader.js"></script>
   <style type="text/css"-->
 
 html{
@@ -29,7 +28,7 @@ body {
     background-attachment: fixed;
 }
 
-    .leftPanel {
+.leftPanel {
     color: white;
     position: absolute;
     Left: 10px;
@@ -47,12 +46,13 @@ body {
   <title>Group Project</title>
 
 <script type='text/javascript'>//<![CDATA[
-
+var scene;
+var objects = [];
 window.onload=function(){
-var scene, renderer, camera, control, sphereGeo;
+var renderer, camera, control, sphereGeo;
 var divElem, divObj;
 var i = 1;
-var objects = [];
+
 init2();
 animate();
 
@@ -60,8 +60,9 @@ animate();
 function init2()
 {
     scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0x0000ff );
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000); 
-    camera.position.z = 20;	
+    camera.position.z = 1;	
 	
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -92,7 +93,7 @@ loader.load(
 	'obj/face.obj',
 	// called when resource is loaded
 	function ( obje ) {
-	var material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true, wireframelinewidth:1} );
+	var material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} );
 obje.traverse( function ( child ) {
 
 						if ( child.isMesh ){
@@ -110,7 +111,7 @@ obje.traverse( function ( child ) {
 /*Start of Spheres*/
     //cubeGeo = new THREE.SphereGeometry(1,7,7);
     sphereGeo = cubeGeo;
-    var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true, wireframelinewidth:1} );
+    var cubeMaterial = new THREE.MeshBasicMaterial(  );
 
 
     var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
@@ -123,7 +124,7 @@ obje.traverse( function ( child ) {
 
     scene.add(cubeMesh);
 
-    console.log( "BufferGEometry:"+cubeMesh.geometry.isBufferGeometry );
+    console.log( "BufferGeometry:"+cubeMesh.geometry.isBufferGeometry );
 	//var ageometry = new THREE.Geometry().fromBufferGeometry( cubeMesh.geometry );
     var edgelist = getEdges(cubeMesh.geometry);//cubeMesh.geometry
     //console.log("edgelist: "+edgelist.length);
@@ -158,12 +159,11 @@ obje.traverse( function ( child ) {
       sphereObjects.push(sphere);
 
     }
-
+	
     for(var i=0; i<cubeMesh.geometry.vertices.length; i++)
     {
-      var material = new THREE.MeshBasicMaterial({color: 0x3300ff});
-      materials.push(material);
-
+	  var material1 = new THREE.MeshBasicMaterial({color: 0x3300ff});
+      materials.push(material1);
     }
 
     for (i = 0; i < cubeGeo.vertices.length; i++) { 
@@ -289,7 +289,7 @@ function cylinderMesh(pointX, pointY, material) {
 
 
 function onDocumentMouseDown( event ) {    
-            event.preventDefault();
+            //event.preventDefault();
             var mouse3D = new THREE.Vector3( ( event.clientX / window.innerWidth ) * 2 - 1,   
                                     -( event.clientY / window.innerHeight ) * 2 + 1,  
                                     0.5 );     
@@ -306,8 +306,11 @@ function onDocumentMouseDown( event ) {
                 {
                   if (objects[i].uuid == intersects[0].object.uuid)
                   {
-                    console.log("We got object: "+i);
+                    console.log("We got object: "+i+"Random:"+Math.random());
                     objects[i].material.color.setHex( Math.random() * 0xffffff );
+					var trimmed = $('#'+lastInputID).val().replace(/(^[,\s]+)|([,\s]+$)/g, '');;
+					$('#'+lastInputID).val(trimmed);
+					$('#'+lastInputID).val(i+','+$('#'+lastInputID).val());//$('#'+lastInputID).val()+","+i);
                   }
 
                 }
@@ -414,38 +417,71 @@ function createVector(x, y, z, camera, width, height) {
         return vector;
     }
 
-function toScreenPosition(obj, camera)
-{
-    var vector = new THREE.Vector3();
-    
-    // TODO: need to update this when resize window
-    var widthHalf = 0.5*renderer.context.canvas.width;
-    var heightHalf = 0.5*renderer.context.canvas.height;
-    
-    obj.updateMatrixWorld();
-    vector.setFromMatrixPosition(obj.matrixWorld);
-    vector.project(camera);
-    
-    vector.x = ( vector.x * widthHalf ) + widthHalf;
-    vector.y = - ( vector.y * heightHalf ) + heightHalf;
-    
-    return { 
-        x: vector.x,
-        y: vector.y
-    };
 
 }
 
-}//]]> 
+var lastInputID;
+var polyLineObjects = [];
+$(document).ready(function(){
+
+
+  $("#btn2").click(function(){
+	var lID = $( "#labelName" ).val().replace(/\s/g, '');
+    $("ol").append("<li>"+$( "#labelName" ).val()+"</li><input placeholder='Click here then on sphere' id='input"+lID+"'><input type='checkbox' id='poly"+lID+"' value='show'> Show poly lines");
+    
+    $("#input"+lID).on("click", function() {
+        console.log("Clicked input.");
+        lastInputID = $(this).attr("id");
+		console.log("Last input id: "+ lastInputID);
+    });
+	
+	$("#poly"+lID).on("click", function() {
+        console.log("Clicked checkbox.");
+		var list = $("#input"+lID).val();
+		var array = list.split(',');
+		var points3D = new THREE.Geometry();
+		for (var i in array) {
+		    console.log("List " + array[i]);
+			points3D.vertices.push( // here you can use 3-dimensional coordinates
+			new THREE.Vector3(objects[array[i]].position.x, objects[array[i]].position.y, objects[array[i]].position.z)
+			);
+		}
+		
+		
+		var line2 = new THREE.Line(points3D, new THREE.LineBasicMaterial({color: "red"}));
+		scene.add(line2);
+        
+    });
+  });
+  
+  
+});
+
+//]]> 
 
 </script>
+</head>
 
-
-
+<body>
   <div class="leftPanel">
 
     <div id="log" >initial content</div>
+	<ol>
 
+	</ol>
+	<select id="labelName">
+		<option>hair line</option>
+		<option>left eye brow</option>
+		<option>right eye brow</option>
+		<option>left ear</option>
+		<option>right ear</option>
+		<option>left eye</option>
+		<option>right eye</option>
+		<option>nose</option>
+		<option>mouth</option>
+		<option>chin</option>
+	</select>
+	<button id="btn2">Create Label</button>
   </div>
 
   <div class="rightPanel">
