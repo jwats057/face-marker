@@ -7,6 +7,7 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="googlebot" content="noindex, nofollow">
     <link rel="stylesheet" type="text/css" href="/css/result-light.css">
+	
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/102/three.min.js"></script>
     <script type="text/javascript" src="https://rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
@@ -14,7 +15,7 @@
 	<script type="text/javascript" src="https://rawgit.com/mrdoob/three.js/master/examples/js/loaders/OBJLoader.js"></script>
   <script src="http://mrdoob.github.io/stats.js/build/stats.min.js"></script>
   
-  <style type="text/css">
+  <style type="text/css"-->
 
 html{
     margin:0px;
@@ -51,14 +52,16 @@ body {
 var stats = new Stats();
 stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
 
+
 var scene;
 var objects = [];
-var mouse3D;
+var mouse3D , INTERSECTED;
+
 window.onload=function(){
 var renderer, camera, control, sphereGeo;
 var divElem, divObj;
 var i = 1;
-
+var raycaster;
 init();
 animate();
 
@@ -67,9 +70,8 @@ function init()
 {
     scene = new THREE.Scene();
 	scene.background = new THREE.Color( 0x0000ff );
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000); 
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1.0, 1000); 
     camera.position.z = 1;	
-	
 	mouse3D = new THREE.Vector2();
 	raycaster =  new THREE.Raycaster();
 	
@@ -78,9 +80,13 @@ function init()
     document.body.appendChild(renderer.domElement);
     
     control = new THREE.OrbitControls(camera, renderer.domElement);
-    control.addEventListener('change', function() {
-        onCameraChange();
-    });
+	
+	
+    //control.addEventListener('change', function() {
+        //onCameraChange();
+    //});
+	
+	//ywindow.addEventListener( 'mousemove', onMouseMove, false );
     
 var size = 10;
 var divisions = 10;
@@ -94,19 +100,19 @@ var loader = new THREE.OBJLoader();
 
 // load a resource
 
-var light = new THREE.PointLight( 0xffffff, 1, 20 );
-light.position.set( 0, 0, 2 );
-scene.add(light);
+//var light = new THREE.PointLight( 0xffffff, 1, 20 );
+//light.position.set( 0, 0, 2 );
+//scene.add(light);
 loader.load(
 	// resource URL
 	'obj/face.obj',
 	// called when resource is loaded
 	function ( obje ) {
-	var material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} );
+	//var material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} );
 obje.traverse( function ( child ) {
 
 						if ( child.isMesh ){
-							child.material = material;
+							//child.material = material;
 						}
 
 					} );
@@ -115,19 +121,20 @@ obje.traverse( function ( child ) {
 	var bb = new THREE.Box3()
 	bb.setFromObject(obje);
 	bb.getCenter(control.target);
+	//camera.lookAt(bb.position);
 	var cubeGeo = new THREE.Geometry().fromBufferGeometry( obje.children[0].geometry );
 	//var cubeGeo =  obje.children[0].geometry;//new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
 /*Start of Spheres*/
     //cubeGeo = new THREE.SphereGeometry(1,7,7);
     sphereGeo = cubeGeo;
-    var cubeMaterial = new THREE.MeshBasicMaterial(  );
+    var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0xcccccc, wireframe: false} );
 
 
     var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
-    
+    //cubeMesh.scale.set(100, 100, 100);
 
     var eGeometry = new THREE.EdgesGeometry( cubeMesh.geometry );
-    var eMaterial = new THREE.LineBasicMaterial( { color: 0x00ff00, linewidth: 1 } );
+    var eMaterial = new THREE.LineBasicMaterial( { color: 0xcccccc, linewidth: 1 } );
     var edges = new THREE.LineSegments( eGeometry, eMaterial );
     //cubeMesh.add( edges );
 
@@ -138,6 +145,7 @@ obje.traverse( function ( child ) {
     var edgelist = getEdges(cubeMesh.geometry);//cubeMesh.geometry
     //console.log("edgelist: "+edgelist.length);
 
+/*
     for(var i=0; i<cubeMesh.geometry.vertices.length; i++)
     {
         eu = edgelist[i].filter(onlyUnique);
@@ -154,6 +162,7 @@ obje.traverse( function ( child ) {
       }
 
     }
+*/
 
     var sphereObjects = [];
     var sphereMeshes = [];
@@ -162,7 +171,7 @@ obje.traverse( function ( child ) {
     for(var i=0; i<cubeMesh.geometry.vertices.length; i++)
     {
 
-      var sphere = new THREE.SphereGeometry(.01, 7, 7);
+      var sphere = new THREE.SphereGeometry(.01, 5, 5);
       sphereObjects.push(sphere);
 
     }
@@ -174,16 +183,20 @@ obje.traverse( function ( child ) {
     }
 
     for (i = 0; i < cubeGeo.vertices.length; i++) { 
-      
-      sphereObjects[i] = sphereObjects[i].translate(cubeGeo.vertices[i].x, cubeGeo.vertices[i].y, cubeGeo.vertices[i].z);
+      //sphereObjects[i] = sphereObjects[i].translate(cubeGeo.vertices[i].x, cubeGeo.vertices[i].y, cubeGeo.vertices[i].z);
       sphereMeshes.push( new THREE.Mesh(sphereObjects[i], materials[i]) );
     
     }
 
     for(var i=0; i<cubeMesh.geometry.vertices.length; i++)
     {
-      scene.add(sphereMeshes[i]);
+      
+	  sphereMeshes[i].position.set(cubeGeo.vertices[i].x, cubeGeo.vertices[i].y, cubeGeo.vertices[i].z);
+	  scene.add(sphereMeshes[i]);
       objects[sphereMeshes[i].uuid] = sphereMeshes[i];
+	  //console.log("sphereMesh uuid: "+sphereMeshes[i].uuid);
+	  //console.log("x:"+sphereMeshes[i].position.x+" y:"+sphereMeshes[i].position.y+" z:"+sphereMeshes[i].position.z);
+
 
     }
 	/*End of Spheres*/
@@ -273,9 +286,6 @@ function getEdges(geometry)
 }
 
 
-
-
-
 function cylinderMesh(pointX, pointY, material) {
             var direction = new THREE.Vector3().subVectors(pointY, pointX);
             var orientation = new THREE.Matrix4();
@@ -295,6 +305,14 @@ function cylinderMesh(pointX, pointY, material) {
         }
 
 
+
+
+function onMouseMove( event ) {   
+event.preventDefault();
+mouse3D.x = ( event.clientX / window.innerWidth ) * 2 - 1;                              
+mouse3D.y = -( event.clientY / window.innerHeight ) * 2 + 1;
+mouse3D.z = 0.0 ; 
+}
 function onDocumentMouseDown( event ) {    
             //event.preventDefault();
  
@@ -313,7 +331,7 @@ function onDocumentMouseDown( event ) {
 				//console.log("uuid: "+uuidtemp);
 				
 				if (objects.hasOwnProperty(uuidtemp)){
-				    var objID = intersects[ i ].object.id;
+				  var objID = intersects[ i ].object.id;
                     console.log("We got object: "+objID+" Random:"+Math.random());
 					//objects[intersects[ 0 ].object.uuid].material.color.setHex( Math.random() * 0xffffff );
 					//scene.updateMatrixWorld(true);
@@ -323,16 +341,17 @@ function onDocumentMouseDown( event ) {
                     intersects[ i ].object.material.color.setHex( Math.random() * 0xffffff );
 					
 					if(lastInputID != 0){
-						//$('#'+lastInputID).val(objID+','+$('#'+lastInputID).val());//$('#'+lastInputID).val()+","+i);
-						//var trimmed = $('#'+lastInputID).val().replace(/(^[,\s]+)|([,\s]+$)/g, '');
-						//$('#'+lastInputID).val(trimmed);
+						$('#'+lastInputID).val(objID+','+$('#'+lastInputID).val());//$('#'+lastInputID).val()+","+i);
+						var trimmed = $('#'+lastInputID).val().replace(/(^[,\s]+)|([,\s]+$)/g, '');
+						$('#'+lastInputID).val(trimmed);
 					}
 				}
                 }
                 //intersects[ 0 ].object.material.color.setHex( Math.random() * 0xffffff );
-        }
+            }
 			
-}
+        }
+
 
 function showLog()
 {
@@ -387,11 +406,12 @@ function showCoords(event) {
 }
 
 
-
+//window.requestAnimationFrame(render);
 function animate()
 {
     requestAnimationFrame( animate );
-    update();
+	//render( scene, camera );
+    //update();
     render();
 	
 	stats.update();
@@ -404,6 +424,7 @@ function update()
 
 function render()
 {
+
     renderer.render(scene, camera);
 }
 
@@ -435,11 +456,11 @@ function createVector(x, y, z, camera, width, height) {
 
 }
 
-var lastInputID;
+var lastInputID=0;
 var polyLineObjects = [];
 $(document).ready(function(){
 
-	document.body.appendChild( stats.dom );
+document.body.appendChild( stats.dom );
 
   $("#btn2").click(function(){
 	var lID = $( "#labelName" ).val().replace(/\s/g, '');
@@ -458,6 +479,8 @@ $(document).ready(function(){
 		var points3D = new THREE.Geometry();
 		for (var i in array) {
 		    console.log("List " + array[i]);
+			//console.log("x:"+objects[array[i]].position.x+" y:"+objects[array[i]].position.y+" z:"+objects[array[i]].position.z);
+			//console.log(objects[425]);
 			points3D.vertices.push( // here you can use 3-dimensional coordinates
 			new THREE.Vector3(objects[array[i]].position.x, objects[array[i]].position.y, objects[array[i]].position.z)
 			);
@@ -488,7 +511,7 @@ $(document).ready(function(){
   <div class="rightPanel">
 
     <div id="logLive" ></div>
-	<ol>
+<ol>
 
 	</ol>
 	<select id="labelName">
@@ -504,7 +527,6 @@ $(document).ready(function(){
 		<option>chin</option>
 	</select>
 	<button id="btn2">Create Label</button>
-
   </div>
   
 
