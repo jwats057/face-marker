@@ -1,6 +1,6 @@
     //Adds spheres to the vertices of the face object (mesh)
     //Then push to objects array
-    function sphereMesh(mesh, object){
+    function sphereMesh(mesh, object, scene){
       var sphereGeom;
       var material;
       var sphere;
