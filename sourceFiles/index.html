@@ -14,6 +14,7 @@
 	<script type="text/javascript" src="https://rawgit.com/mrdoob/three.js/master/examples/js/loaders/OBJLoader.js"></script>
   <script src="http://mrdoob.github.io/stats.js/build/stats.min.js"></script>
   <script src="js/custom/sphereMesh.js"></script>
+  <script src = "js/dat.gui.min.js"></script>
 
   <style type="text/css">
 
@@ -54,7 +55,10 @@ stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
 
 var scene;
 var objects = [];
+var noseArray = [];
+var eyebrowArray = [];
 var mouse3D;
+var state;
 window.onload=function(){
 var renderer, camera, control, sphereGeo;
 var divElem, divObj;
@@ -117,6 +121,8 @@ obje.traverse( function ( child ) {
 	bb.setFromObject(obje);
 	bb.getCenter(control.target);
 	var cubeGeo = new THREE.Geometry().fromBufferGeometry( obje.children[0].geometry );
+  cubeGeo.mergeVertices();  //removes duplicate vertices
+  //cubeGeo.center();
 	//var cubeGeo =  obje.children[0].geometry;//new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
 /*Start of Spheres*/
     //cubeGeo = new THREE.SphereGeometry(1,7,7);
@@ -125,6 +131,7 @@ obje.traverse( function ( child ) {
 
 
     var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
+    console.log("verts: " + cubeMesh.geometry.vertices.length);
 
 
     var eGeometry = new THREE.EdgesGeometry( cubeMesh.geometry );
@@ -134,7 +141,7 @@ obje.traverse( function ( child ) {
 
     //scene.add(cubeMesh);
 
-    console.log( "BufferGeometry:"+cubeMesh.geometry.isBufferGeometry );
+    //console.log( "Geometry: "+cubeMesh.geometry.isGeometry );
 	//var ageometry = new THREE.Geometry().fromBufferGeometry( cubeMesh.geometry );
     var edgelist = getEdges(cubeMesh.geometry);//cubeMesh.geometry
     //console.log("edgelist: "+edgelist.length);
@@ -142,14 +149,15 @@ obje.traverse( function ( child ) {
     for(var i=0; i<cubeMesh.geometry.vertices.length; i++)
     {
         eu = edgelist[i].filter(onlyUnique);
-      console.log("edgelist: "+i+": "+eu);
+      //console.log("edgelist: "+i+": "+eu);
 
       for(var j=0; j<eu.length; j++)
       {
-        console.log("e: "+i+","+eu[j]);
+        //console.log("e: "+i+","+eu[j]);
         var cyMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
         var cylinder = cylinderMesh(cubeGeo.vertices[i], cubeGeo.vertices[eu[j]], cyMaterial);
         scene.add(cylinder);
+        objects.push(cylinder);
         objects[cylinder.uuid] = cylinder;
 
       }
@@ -180,6 +188,8 @@ obje.traverse( function ( child ) {
 
 
     showLog();
+
+    displayGUI(); //function call for gui
     //showCoords(event);
 
     //document.addEventListener("click", showCoords);
@@ -266,7 +276,7 @@ function cylinderMesh(pointX, pointY, material) {
         }
 
 
-function onDocumentMouseDown( event ) {
+/*function onDocumentMouseDown( event ) {
             //event.preventDefault();
 
 			mouse3D.x = ( event.clientX / window.innerWidth ) * 2 - 1;
@@ -303,7 +313,121 @@ function onDocumentMouseDown( event ) {
                 //intersects[ 0 ].object.material.color.setHex( Math.random() * 0xffffff );
         }
 
-}
+}*/
+
+//raycast on mouse down
+function onDocumentMouseDown( event ) {
+            //event.preventDefault();
+            var mouse3D = new THREE.Vector2( ( event.clientX / window.innerWidth ) * 2 - 1,
+                                    -( event.clientY / window.innerHeight ) * 2 + 1);
+                                    //0.5 );
+            var raycaster =  new THREE.Raycaster();
+            raycaster.setFromCamera( mouse3D, camera );
+            var intersects = raycaster.intersectObjects(objects);
+            var resume = true;
+
+            //checks for duplicate selected vertex
+            function checkDuplicate(arr, k){
+              var res = true;
+              if(arr.length > 1){
+                for(var j = 0; j < arr.length; j++){
+                  if(arr[j] == k){
+                    //console.log("duplicate vertex");
+                    res = false;
+                    break;
+                  }
+                  else{
+                    res = true;
+                    //console.log("ok vertex");
+                  }
+                }
+              }
+              return res;
+            }
+
+            if ( intersects.length > 0 ) {
+                //console.log("intersects.length: "+intersects.length);
+
+                //console.log("intersected objects position: "+intersects[ 0 ].object.uuid);
+                //console.log("v: " + intersects[ 0 ].object.geometry.vertices[0]);
+                for(var i=0; i<objects.length; i++)
+                {
+                  if (objects[i].uuid == intersects[0].object.uuid)
+                  {
+                    console.log("We got object: "+i);
+                    //switch based on current state
+                    switch(state){
+                      case 1:     //Nose
+                        resume = checkDuplicate(noseArray, i);  //duplicate?
+                        console.log("resume: " + resume);
+                        if(resume == true){
+                        console.log("Nose point");
+                        objects[i].material.color.setHex( Math.random() * 0xffffff );   //see selection
+                        noseArray.push(i);  //not duplicate, so push (index) to array
+                        }
+                        break;
+                      case 2:     //Eyebrows
+                        resume = checkDuplicate(eyebrowArray, i);
+                        console.log("resume: " + resume);
+                        if(resume == true){
+                        console.log("Eyebrow point");
+                        objects[i].material.color.setHex( Math.random() * 0xffffff );
+                        eyebrowArray.push(i)
+                        }
+                        break;
+                      default:    //Null
+                        console.log("Null state");
+                        break;
+                    }
+                  }
+
+                }
+
+
+                //intersects[ 0 ].object.material.color.setHex( Math.random() * 0xffffff );
+            }
+        }
+
+        //Create gui and handle gui events
+        function displayGUI(){
+                var gui = new dat.GUI();
+                /*var jar;
+
+                var parameters = {
+                  a: "NosePoints",
+                  b: "Eyebrows",
+                  c: false
+                }*/
+
+                var str = "-";
+
+                var controller = new function(){
+                  this.Nose = str;
+                  this.Eyebrows = str;
+                  this.Check = false;
+                  this.Print = false;
+                }();
+
+                var labels = gui.addFolder('Labels')
+                labels.add(controller, 'Nose', str).onChange(function(){  //
+                  state = 1;  //global state for Nose
+                  (controller.Nose) = noseArray;    //see verts/edges from array in gui
+                });
+                //labels.add(parameters, 'a').name('NosePoints');
+                labels.add(controller, 'Eyebrows', str).onChange(function(){
+                  state = 2;
+                  (controller.Eyebrows) = eyebrowArray;
+                });
+                labels.add(controller, 'Check', false).onChange(function(){
+                  state = 0;  //Null state
+                });
+                labels.add(controller, 'Print', false).onChange(function(){ //Print vert/edge indices
+                  console.log("Nose: " + noseArray);
+                  console.log("Eyebrows: " + eyebrowArray);
+                });
+
+                gui.open();
+              }
 
 function showLog()
 {

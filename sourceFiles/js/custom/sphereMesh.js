@@ -14,6 +14,7 @@
         sphere.geometry.translate(mesh.geometry.vertices[i].x, mesh.geometry.vertices[i].y, mesh.geometry.vertices[i].z);
         scene.add(sphere);
         sphereMeshes.push(sphere);
+        objects.push(sphere);
       }
 
 	  //push sphere meshes to objects array
