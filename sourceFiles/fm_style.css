@@ -1,0 +1,31 @@
+html{
+     margin:0px;
+     height: 100%;
+     background-attachment: fixed;
+     background-size: cover;
+     background-repeat:no-repeat;
+}
+
+body {
+     min-height: 100%;
+     margin:0px;
+     background-attachment: fixed;
+}
+
+canvas {
+     width: 100%;
+     height: 100%
+}
+
+.leftPanel {
+     color: white;
+     position: absolute;
+     left: 10px;
+     overflow-y: hidden;
+}
+
+.rightPanel {
+     color: yellow;
+     position: absolute;
+     right: 10px;
+}
