@@ -9,7 +9,7 @@
       //for each vertex, create sphere mesh and translate to face mesh vertices
       for(var i = 0; i < mesh.geometry.vertices.length; i++){
         sphereGeom = new THREE.SphereGeometry(.01,7,7);
-        material = new THREE.MeshBasicMaterial({color: 0x00ff00});
+        material = new THREE.MeshBasicMaterial({color: 0x43a242});
         sphere = new THREE.Mesh(sphereGeom, material);
         sphere.geometry.translate(mesh.geometry.vertices[i].x, mesh.geometry.vertices[i].y, mesh.geometry.vertices[i].z);
         scene.add(sphere);
