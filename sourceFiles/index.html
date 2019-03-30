@@ -55,8 +55,20 @@ stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
 
 var scene;
 var objects = [];
+
 var noseArray = [];
-var eyebrowArray = [];
+
+var leyebrowArray = [];
+var reyebrowArray = [];
+
+var leyeArray = [];
+var reyeArray = [];
+
+var learArray = [];
+var rearArray = [];
+
+var chinArray = [];
+
 var mouse3D;
 var state;
 window.onload=function(){
@@ -71,7 +83,7 @@ animate();
 function init()
 {
     scene = new THREE.Scene();
-	scene.background = new THREE.Color( 0x0000ff );
+	  scene.background = new THREE.Color( 0x3a3a3a );
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
     camera.position.z = 1;
 
@@ -141,6 +153,11 @@ obje.traverse( function ( child ) {
 
     //scene.add(cubeMesh);
 
+    //add spheres to mesh, push to objects[], add to scene
+    sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
+
+    console.log("objects size: "+ objects.length);
+
     //console.log( "Geometry: "+cubeMesh.geometry.isGeometry );
 	//var ageometry = new THREE.Geometry().fromBufferGeometry( cubeMesh.geometry );
     var edgelist = getEdges(cubeMesh.geometry);//cubeMesh.geometry
@@ -163,10 +180,10 @@ obje.traverse( function ( child ) {
       }
 
     }
-
+    console.log("objects size: "+ objects.length);
+    console.log("edges: " + (objects.length - cubeMesh.geometry.vertices.length));
     //add spheres to mesh, push to objects[], add to scene
-    sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
-
+    //sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
 	},
 	// called when loading is in progresses
 	function ( xhr ) {
@@ -184,7 +201,7 @@ obje.traverse( function ( child ) {
 
 
 
-    console.log("objects size: "+objects.length);
+    //console.log("objects size: "+ objects.length);
 
 
     showLog();
@@ -195,6 +212,15 @@ obje.traverse( function ( child ) {
     //document.addEventListener("click", showCoords);
 
     document.addEventListener( 'mousedown', onDocumentMouseDown );
+
+    window.addEventListener( 'resize', onWindowResize, false );
+
+    function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+        control.update();
+			}
 
 
 }
@@ -242,7 +268,6 @@ function getEdges(geometry)
     vertices.push([ Math.min(faceVertices[1], faceVertices[2]), Math.max(faceVertices[1], faceVertices[2]) ]);*/
 
     //console.log("faceVertices length: "+faceVertices.length);
-
 
   }
 
@@ -326,10 +351,12 @@ function onDocumentMouseDown( event ) {
             var intersects = raycaster.intersectObjects(objects);
             var resume = true;
 
+            //console.log("objects: " + objects.length);
+
             //checks for duplicate selected vertex
             function checkDuplicate(arr, k){
               var res = true;
-              if(arr.length > 1){
+              if(arr.length > 0){
                 for(var j = 0; j < arr.length; j++){
                   if(arr[j] == k){
                     //console.log("duplicate vertex");
@@ -345,6 +372,20 @@ function onDocumentMouseDown( event ) {
               return res;
             }
 
+            function deleteIndex(arr, k){
+              for(var j = 0; j < arr.length; j++){
+                if(arr[j] == k){
+                  arr.splice(j, 1);
+                  if(k <= sphereGeo.vertices.length){
+                    objects[k].material.color.setHex(0x43a242);
+                  }
+                  else{
+                    objects[k].material.color.setHex(0xffffff);
+                  }
+                }
+              }
+            }
+
             if ( intersects.length > 0 ) {
                 //console.log("intersects.length: "+intersects.length);
 
@@ -357,24 +398,120 @@ function onDocumentMouseDown( event ) {
                     console.log("We got object: "+i);
                     //switch based on current state
                     switch(state){
+
+                      case -1:
+                        deleteIndex(noseArray, i);
+                        break;
+
+                      case -2:
+                        deleteIndex(leyebrowArray, i);
+                        break;
+
+                      case -3:
+                        deleteIndex(reyebrowArray, i);
+                        break;
+
+                      case -4:
+
+                        deleteIndex(leyeArray, i);
+                        break;
+
+                      case -5:
+                        deleteIndex(reyeArray, i);
+                        break;
+
+                      case -6:
+                        deleteIndex(learArray, i);
+                        break;
+
+                      case -7:
+                        deleteIndex(rearArray, i);
+                        break;
+
+                      case -8:
+                        deleteIndex(chinArray, i);
+                        break;
+
                       case 1:     //Nose
                         resume = checkDuplicate(noseArray, i);  //duplicate?
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("Nose point");
-                        objects[i].material.color.setHex( Math.random() * 0xffffff );   //see selection
+                        objects[i].material.color.setHex(0xff0000);   //see selection
                         noseArray.push(i);  //not duplicate, so push (index) to array
                         }
                         break;
+
                       case 2:     //Eyebrows
-                        resume = checkDuplicate(eyebrowArray, i);
+                        resume = checkDuplicate(leyebrowArray, i);
                         console.log("resume: " + resume);
                         if(resume == true){
-                        console.log("Eyebrow point");
-                        objects[i].material.color.setHex( Math.random() * 0xffffff );
-                        eyebrowArray.push(i)
+                        console.log("L Eyebrow point");
+                        objects[i].material.color.setHex(0xff4000);
+                        leyebrowArray.push(i);
                         }
                         break;
+
+                      case 3:
+                        resume = checkDuplicate(reyebrowArray, i);
+                        console.log("resume: " + resume);
+                        if(resume == true){
+                        console.log("R Eyebrow point");
+                        objects[i].material.color.setHex(0xff8000);
+                        reyebrowArray.push(i);
+                        }
+                        break;
+                      //Eyes
+                      case 4:
+                        resume = checkDuplicate(leyeArray, i);
+                        console.log("resume: " + resume);
+                        if(resume == true){
+                        console.log("L Eye point");
+                        objects[i].material.color.setHex(0x0040ff);
+                        leyeArray.push(i);
+                        }
+                        break;
+
+                      case 5:
+                        resume = checkDuplicate(reyeArray, i);
+                        console.log("resume: " + resume);
+                        if(resume == true){
+                        console.log("R Eye point");
+                        objects[i].material.color.setHex(0x0080ff);
+                        reyeArray.push(i);
+                        }
+                        break;
+                      //Ears
+                      case 6:
+                        resume = checkDuplicate(learArray, i);
+                        console.log("resume: " + resume);
+                        if(resume == true){
+                        console.log("L Ear point");
+                        objects[i].material.color.setHex(0xbf00ff);
+                        learArray.push(i);
+                        }
+                        break;
+
+                      case 7:
+                        resume = checkDuplicate(rearArray, i);
+                        console.log("resume: " + resume);
+                        if(resume == true){
+                        console.log("R Ear point");
+                        objects[i].material.color.setHex(0xff00ff);
+                        rearArray.push(i);
+                        }
+                        break;
+
+                      case 8:
+                        resume = checkDuplicate(chinArray, i);
+                        console.log("resume: " + resume);
+                        if(resume == true){
+                        console.log("chin point");
+                        objects[i].material.color.setHex(0x00ff00);
+                        chinArray.push(i);
+                        }
+                        break;
+
                       default:    //Null
                         console.log("Null state");
                         break;
@@ -388,6 +525,7 @@ function onDocumentMouseDown( event ) {
             }
         }
 
+
         //Create gui and handle gui events
         function displayGUI(){
                 var gui = new dat.GUI();
@@ -398,32 +536,132 @@ function onDocumentMouseDown( event ) {
                   b: "Eyebrows",
                   c: false
                 }*/
+                function printArrays(boolean){
+                  if(boolean == true){
+                    console.log("Nose: " + noseArray);
+                    console.log("L Eyebrow: " + leyebrowArray);
+                    console.log("R Eyebrow: " + reyebrowArray);
+                    console.log("L Eye: " + leyeArray);
+                    console.log("R Eye: " + reyeArray);
+                    console.log("L Ear: " + learArray);
+                    console.log("R Ear: " + rearArray);
+                    console.log("Chin: " + chinArray);
+                    document.getElementById("printinfo").innerHTML = "Nose: " + noseArray
+                                                                    + "\nL Eyebrow: " + leyebrowArray
+                                                                    + "\nR Eyebrow: " + reyebrowArray
+                                                                    + "\nL Eye: " + leyeArray
+                                                                    + "\nR Eye: " + reyeArray
+                                                                    + "\nL Ear: " + learArray
+                                                                    + "\nR Ear: " + rearArray
+                                                                    + "\nChin: " + chinArray;
+                    document.getElementById("printinfo").style.display = "block";
+                  }
+                  else{
+                    document.getElementById("printinfo").style.display = "none";
+                  }
+                }
+
+                function showCmds(boolean){
+                  if(boolean == true){
+                    document.getElementById("cmds").innerHTML = "Click anywhere on label text field then type commands: " + "\nadd" + "\ndel"
+                                                                + "\nThen press Enter";
+                    document.getElementById("cmds").style.display = "block";
+                  }
+                  else{
+                    document.getElementById("cmds").style.display = "none";
+                  }
+                }
 
                 var str = "-";
 
                 var controller = new function(){
                   this.Nose = str;
-                  this.Eyebrows = str;
-                  this.Check = false;
+                  this.Leyebrow = str;
+                  this.Reyebrow = str;
+                  this.Leye = str;
+                  this.Reye = str;
+                  this.Lear = str;
+                  this.Rear = str;
+                  this.Chin = str;
+                  this.nullCheck = function(){
+                    state = 0;
+                    document.getElementById("info").innerHTML = "Null State";
+                  };
                   this.Print = false;
+                  this.Cmds = false;
                 }();
 
-                var labels = gui.addFolder('Labels')
-                labels.add(controller, 'Nose', str).onChange(function(){  //
-                  state = 1;  //global state for Nose
+                //Regex for "add" and "del"
+                function matches(locController, stateVal, name){
+                  if(typeof locController === 'string'){
+                  if(locController.match(/add/i)){
+                    state = stateVal;
+                    document.getElementById("info").innerHTML = "Add : " + name;
+                  }
+                  else if(locController.match(/del/i)){
+                    state = -stateVal;
+                    document.getElementById("info").innerHTML = "Delete : " + name;
+                  }
+                  else{
+                    state = 0;
+                    document.getElementById("info").innerHTML = "Null State";
+                  }
+                }
+                }
+
+                var labels = gui.addFolder('Labels');
+                var methods = gui.addFolder('Methods');
+                //Nose
+                labels.add(controller, 'Nose', str).onFinishChange(function(){
+                  matches(controller.Nose, 1, "Nose");
                   (controller.Nose) = noseArray;    //see verts/edges from array in gui
-                });
-                //labels.add(parameters, 'a').name('NosePoints');
-                labels.add(controller, 'Eyebrows', str).onChange(function(){
-                  state = 2;
-                  (controller.Eyebrows) = eyebrowArray;
-                });
-                labels.add(controller, 'Check', false).onChange(function(){
-                  state = 0;  //Null state
-                });
-                labels.add(controller, 'Print', false).onChange(function(){ //Print vert/edge indices
-                  console.log("Nose: " + noseArray);
-                  console.log("Eyebrows: " + eyebrowArray);
+                }).listen();
+
+                //Eyebrows
+                labels.add(controller, 'Leyebrow', str).name('L eyebrow').onFinishChange(function(){
+                  matches(controller.Leyebrow, 2, "L eyebrow");
+                  (controller.Leyebrow) = leyebrowArray;
+                }).listen();
+                labels.add(controller, 'Reyebrow', str).name('R eyebrow').onFinishChange(function(){
+                  matches(controller.Reyebrow, 3, "R eyebrow");
+                  (controller.Reyebrow) = reyebrowArray;
+                }).listen();
+
+                //Eyes
+                labels.add(controller, 'Leye', str).name('L eye').onFinishChange(function(){
+                  matches(controller.Leye, 4, "L eye");
+                  (controller.Leye) = leyeArray;
+                }).listen();
+                labels.add(controller, 'Reye', str).name('R eye').onFinishChange(function(){
+                  matches(controller.Reye, 5, "R eye");
+                  (controller.Reye) = reyeArray;
+                }).listen();
+
+                //Ears
+                labels.add(controller, 'Lear', str).name('L ear').onFinishChange(function(){
+                  matches(controller.Lear, 6, "L ear");
+                  (controller.Lear) = learArray;
+                }).listen();
+                labels.add(controller, 'Rear', str).name('R ear').onFinishChange(function(){
+                  matches(controller.Rear, 7, "R ear");
+                  (controller.Rear) = rearArray;
+                }).listen();
+
+                //Chin
+                labels.add(controller, 'Chin', str).onFinishChange(function(){
+                  matches(controller.Chin, 8, "Chin");
+                  (controller.Chin) = chinArray;
+                }).listen();
+
+                labels.add(controller, 'nullCheck').name('Null State');//.onChange(function(){
+                  //state = 0;  //Null state
+                //});
+                methods.add(controller, 'Print', false).name('Show Print').onChange(function(){
+                  printArrays(controller.Print);
+                }).listen();
+
+                methods.add(controller, 'Cmds', false).name('Show Commands').onChange(function(){
+                  showCmds(controller.Cmds);
                 });
 
                 gui.open();
@@ -574,6 +812,58 @@ $(document).ready(function(){
 </head>
 
 <body>
+  <div id="info">Null State</div>
+
+  <style type="text/css">
+  #info {
+  	position: absolute;
+  	top: 80px;
+    left: 10px;
+  	text-align: left;
+  	z-index: 100;
+  	display:block;
+    border: 3px solid #73AD21;
+    color: #ffffff
+  }
+  </style>
+
+  <div id="printinfo">Print</div>
+
+  <style type="text/css">
+  #printinfo {
+    position: absolute;
+    top: 120px;
+    left: 10px;
+    text-align: left;
+    white-space: pre-line;
+    word-wrap: break-word;
+    width: 150px;
+    z-index: 100;
+    display: none;
+    border: 3px solid #73AD21;
+    color: #ffffff
+  }
+  </style>
+
+  <div id="cmds">Commands</div>
+
+  <style type="text/css">
+  #cmds {
+    position: absolute;
+    top: 0px;
+    left: 120px;
+    text-align: left;
+    z-index: 100;
+    white-space: pre-line;
+    word-wrap: break-word;
+    width: 200px;
+    display: none;
+    border: 3px solid #73AD21;
+    color: #ffffff
+  }
+
+  </style>
+
   <div class="leftPanel">
 
     <div id="log" ></div>
@@ -583,10 +873,10 @@ $(document).ready(function(){
   <div class="rightPanel">
 
     <div id="logLive" ></div>
-	<ol>
+	<!--<ol>
 
-	</ol>
-	<select id="labelName">
+	</ol>-->
+ <!--<select id="labelName">
 		<option>hair line</option>
 		<option>left eye brow</option>
 		<option>right eye brow</option>
@@ -598,7 +888,7 @@ $(document).ready(function(){
 		<option>mouth</option>
 		<option>chin</option>
 	</select>
-	<button id="btn2">Create Label</button>
+	<button id="btn2">Create Label</button>-->
 
   </div>
 
