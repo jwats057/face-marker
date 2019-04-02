@@ -56,18 +56,18 @@ stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
 var scene;
 var objects = [];
 
-var noseArray = [];
+var noseArray = []; //252,1170,1271,218];
 
-var leyebrowArray = [];
-var reyebrowArray = [];
+var leyebrowArray = []; //429,568,12,540,2,534,537];
+var reyebrowArray = []; //240,1234,242,1322];
 
-var leyeArray = [];
-var reyeArray = [];
+var leyeArray = []; //668,49,673,50,674];
+var reyeArray = []; //423,1232,1777,1773,1196];
 
-var learArray = [];
-var rearArray = [];
+var learArray = []; //457,1041,1865,191];
+var rearArray = []; //380,1651,520];
 
-var chinArray = [];
+var chinArray = []; //223,1443,1440,308];
 
 var mouse3D;
 var state;
@@ -182,6 +182,27 @@ obje.traverse( function ( child ) {
     }
     console.log("objects size: "+ objects.length);
     console.log("edges: " + (objects.length - cubeMesh.geometry.vertices.length));
+
+    /* Reads labeled points from array and colors them */
+    function updateColor(arr, obj, color){
+      for(var i = 0; i < obj.length; i++){
+        for(var j = 0; j < arr.length; j++){
+        if(arr[j] == i){
+          obj[i].material.color.setHex(color);
+        }
+      }
+      }
+    }
+
+    updateColor(noseArray, objects, 0xff0000);
+    updateColor(leyebrowArray, objects, 0xff4000);
+    updateColor(reyebrowArray, objects, 0xff8000);
+    updateColor(leyeArray, objects, 0x0040ff);
+    updateColor(reyeArray, objects, 0x0080ff);
+    updateColor(learArray, objects, 0xbf00ff);
+    updateColor(rearArray, objects, 0xff00ff);
+    updateColor(chinArray, objects, 0x00ff00);
+
     //add spheres to mesh, push to objects[], add to scene
     //sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
 	},
@@ -278,10 +299,6 @@ function getEdges(geometry)
 
 }
 
-
-
-
-
 function cylinderMesh(pointX, pointY, material) {
             var direction = new THREE.Vector3().subVectors(pointY, pointX);
             var orientation = new THREE.Matrix4();
@@ -300,49 +317,10 @@ function cylinderMesh(pointX, pointY, material) {
             return edge;
         }
 
-
-/*function onDocumentMouseDown( event ) {
-            //event.preventDefault();
-
-			mouse3D.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-			mouse3D.y = -( event.clientY / window.innerHeight ) * 2 + 1;
-			raycaster.setFromCamera( mouse3D, camera );
-            var intersects = raycaster.intersectObjects( scene.children);
-
-            if ( intersects.length > 0 ) {
-                console.log("intersects.length: "+intersects.length);
-
-                //console.log("intersected objects position: "+intersects[ 0 ].object.uuid);
-
-				for ( var i = 0; i < intersects.length; i++ ) {
-				var uuidtemp = intersects[i].object.uuid;
-				//console.log("uuid: "+uuidtemp);
-
-				if (objects.hasOwnProperty(uuidtemp)){
-				    var objID = intersects[ i ].object.id;
-                    console.log("We got object: "+objID+" Random:"+Math.random());
-					//objects[intersects[ 0 ].object.uuid].material.color.setHex( Math.random() * 0xffffff );
-					//scene.updateMatrixWorld(true);
-					var pt = new THREE.Vector3();
-					pt.setFromMatrixPosition( intersects[ i ].object.matrixWorld );
-					console.log("position pt: x:"+pt.x+" y:"+pt.y+" z:"+pt.z);
-                    intersects[ i ].object.material.color.setHex( Math.random() * 0xffffff );
-
-					if(lastInputID != 0){
-						//$('#'+lastInputID).val(objID+','+$('#'+lastInputID).val());//$('#'+lastInputID).val()+","+i);
-						//var trimmed = $('#'+lastInputID).val().replace(/(^[,\s]+)|([,\s]+$)/g, '');
-						//$('#'+lastInputID).val(trimmed);
-					}
-				}
-                }
-                //intersects[ 0 ].object.material.color.setHex( Math.random() * 0xffffff );
-        }
-
-}*/
-
 //raycast on mouse down
 function onDocumentMouseDown( event ) {
             //event.preventDefault();
+
             var mouse3D = new THREE.Vector2( ( event.clientX / window.innerWidth ) * 2 - 1,
                                     -( event.clientY / window.innerHeight ) * 2 + 1);
                                     //0.5 );
@@ -353,7 +331,7 @@ function onDocumentMouseDown( event ) {
 
             //console.log("objects: " + objects.length);
 
-            //checks for duplicate selected vertex
+            /* Checks for duplicate selected label point */
             function checkDuplicate(arr, k){
               var res = true;
               if(arr.length > 0){
@@ -372,6 +350,7 @@ function onDocumentMouseDown( event ) {
               return res;
             }
 
+            /* Removes selected label points from array and re-colors them to default color */
             function deleteIndex(arr, k){
               for(var j = 0; j < arr.length; j++){
                 if(arr[j] == k){
@@ -383,6 +362,18 @@ function onDocumentMouseDown( event ) {
                     objects[k].material.color.setHex(0xffffff);
                   }
                 }
+              }
+            }
+
+            /* Reads labeled points from array and colors them */
+            function updateColor(arr, obj, color){
+              for(var i = 0; i < obj.length; i++){
+                for(var j = 0; j < arr.length; j++){
+                if(arr[j] == i){
+                  console.log("i: " + i);
+                  obj[i].material.color.setHex(color);
+                }
+              }
               }
             }
 
@@ -437,8 +428,8 @@ function onDocumentMouseDown( event ) {
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("Nose point");
-                        objects[i].material.color.setHex(0xff0000);   //see selection
                         noseArray.push(i);  //not duplicate, so push (index) to array
+                        updateColor(noseArray, objects, 0xff0000);
                         }
                         break;
 
@@ -447,8 +438,8 @@ function onDocumentMouseDown( event ) {
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("L Eyebrow point");
-                        objects[i].material.color.setHex(0xff4000);
                         leyebrowArray.push(i);
+                        updateColor(leyebrowArray, objects, 0xff4000);
                         }
                         break;
 
@@ -457,8 +448,8 @@ function onDocumentMouseDown( event ) {
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("R Eyebrow point");
-                        objects[i].material.color.setHex(0xff8000);
                         reyebrowArray.push(i);
+                        updateColor(reyebrowArray, objects, 0xff8000);
                         }
                         break;
                       //Eyes
@@ -467,8 +458,8 @@ function onDocumentMouseDown( event ) {
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("L Eye point");
-                        objects[i].material.color.setHex(0x0040ff);
                         leyeArray.push(i);
+                        updateColor(leyeArray, objects, 0x0040ff);
                         }
                         break;
 
@@ -477,8 +468,8 @@ function onDocumentMouseDown( event ) {
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("R Eye point");
-                        objects[i].material.color.setHex(0x0080ff);
                         reyeArray.push(i);
+                        updateColor(reyeArray, objects, 0x0080ff);
                         }
                         break;
                       //Ears
@@ -487,8 +478,8 @@ function onDocumentMouseDown( event ) {
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("L Ear point");
-                        objects[i].material.color.setHex(0xbf00ff);
                         learArray.push(i);
+                        updateColor(learArray, objects, 0xbf00ff);
                         }
                         break;
 
@@ -497,8 +488,8 @@ function onDocumentMouseDown( event ) {
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("R Ear point");
-                        objects[i].material.color.setHex(0xff00ff);
                         rearArray.push(i);
+                        updateColor(rearArray, objects, 0xff00ff);
                         }
                         break;
 
@@ -507,8 +498,8 @@ function onDocumentMouseDown( event ) {
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("chin point");
-                        objects[i].material.color.setHex(0x00ff00);
                         chinArray.push(i);
+                        updateColor(chinArray, objects, 0x00ff00);
                         }
                         break;
 
@@ -564,7 +555,7 @@ function onDocumentMouseDown( event ) {
                 function showCmds(boolean){
                   if(boolean == true){
                     document.getElementById("cmds").innerHTML = "Click anywhere on label text field then type commands: " + "\nadd" + "\ndel"
-                                                                + "\nThen press Enter";
+                                                                + "\nThen press Enter and select feature points";
                     document.getElementById("cmds").style.display = "block";
                   }
                   else{
