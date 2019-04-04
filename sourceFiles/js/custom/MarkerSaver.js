@@ -5,7 +5,7 @@ let fs = require('fs');
 Changes depending on number of data we need to use.
 Currently Includes: Identifier/vertex color/x-pos/y-pos/z-pos
 */
-const NUM_OF_COL = 5;
+const NUM_OF_COL = 6;
 
 class MarkerSaver {
      /*Returns a formatted string detailing marker data. The
@@ -42,15 +42,18 @@ class MarkerSaver {
                     //Color
                     if (j == 1)
                          stringData +=  listOfFeatures[i][1] + " ";
-                    //Vertex.x
+                    //Vertex Index
                     else if (j == 2)
-                         stringData +=  listOfFeatures[i][2] + " ";
-                    //Vertex.y
+                         stringData += listOfFeatures[i][2] + " "
+                    //Vertex.x
                     else if (j == 3)
                          stringData +=  listOfFeatures[i][3] + " ";
-                    //Vertex.z
+                    //Vertex.y
                     else if (j == 4)
-                         stringData +=  listOfFeatures[i][4];
+                         stringData +=  listOfFeatures[i][4] + " ";
+                    //Vertex.z
+                    else if (j == 5)
+                         stringData +=  listOfFeatures[i][5];
                }
                stringData += "\n";
           }
@@ -92,11 +95,11 @@ function test() {
      let markerData = "";
 
      let featureList = [
-          [1, "#00000", 0.1213, 0.554688, 0.1523554],
-          [2, "#00000", 0.1213, 0.554688, 0.1523554],
-          [7, "#00000", 0.1213, 0.554688, 0.1523554],
-          [3, "#00000", 0.1213, 0.554688, 0.1523554],
-          [5, "#00000", 0.1213, 0.554688, 0.1523554]
+          [1, "#00000", 0, 0.1213, 0.554688, 0.1523554],
+          [2, "#00000", 2, 0.1213, 0.554688, 0.1523554],
+          [7, "#00000", 6, 0.1213, 0.554688, 0.1523554],
+          [3, "#00000", 7, 0.1213, 0.554688, 0.1523554],
+          [5, "#00000", 9, 0.1213, 0.554688, 0.1523554]
      ];
      markerData = MarkerSaver.createMarkerString(featureList, markerData);
      /*Appended to random file because didn't want to mess with face.obj*/
