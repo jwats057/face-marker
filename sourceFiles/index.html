@@ -78,6 +78,9 @@ var markerArray = [];
 //Array that keeps track of deleted markers for undo later.
 var delMarkerArr = [];
 
+//Used to reset colors of objects to loaded default
+var defColorArr = [];
+
 //Formatted String that contains marker data
 var markerData = "";
 
@@ -487,8 +490,8 @@ function undoPreviousDeletion(){
 
 /*Use FileSaver.js to save marker data to file on client-side.*/
 function exportMarkerData(){
-     var blob = new Blob([markerData], {type: "text/plain;charset=utf-8"});
-     saveAs(blob, "Marker.md");
+     var blob = new Blob([markerData], {type: "text;charset=utf-8"});
+     saveAs(blob, "MarkerFile");
 }
 
 /*Reset marker variables for when user wants to restart marking the data again.*/
@@ -496,6 +499,27 @@ function resetStoredMarkerData(){
      markerArray = [];
      delMarkerArr = [];
      markerData = "";
+     noseArray = [];
+     leyebrowArray = [];
+     reyebrowArray = [];
+     leyeArray = [];
+     reyeArray = [];
+     learArray = [];
+     rearArray = [];
+     chinArray = [];
+     var i;
+     for (i = 0; i < defColorArr.length; i++)
+          objects[defColorArr[i][0]].material.color.setHex(defColorArr[i][1]);
+}
+
+/*Needed to default marked elements to their original colors when
+pressing the 'Reset All' button in the GUI*/
+function getDefaultColor(objectIndex, color) {
+     var tempColorArr = [];
+     tempColorArr.push(objectIndex);
+     tempColorArr.push(color);
+     defColorArr.push(tempColorArr);
+     console.log(defColorArr);
 }
 
 //raycast on mouse down
@@ -604,28 +628,30 @@ function onDocumentMouseDown( event ) {
                         console.log("resume: " + resume);
                         if(resume == true){
                             console.log("Nose point");
+
+                            getDefaultColor(i, objects[i].material.color.getHex());
                             objects[i].material.color.setHex(0xff0000);   //see selection
                             noseArray.push(i);  //not duplicate, so push (index) to array
                             buildMarkerArray(state, i, objects[i].material.color.getHexString());
                         }
                         break;
-
                       case 2:     //Eyebrows
                         resume = checkDuplicate(leyebrowArray, i);
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("L Eyebrow point");
+                        getDefaultColor(i, objects[i].material.color.getHex());
                         objects[i].material.color.setHex(0xff4000);
                         leyebrowArray.push(i);
                         buildMarkerArray(state, i, objects[i].material.color.getHexString());
                         }
                         break;
-
                       case 3:
                         resume = checkDuplicate(reyebrowArray, i);
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("R Eyebrow point");
+                        getDefaultColor(i, objects[i].material.color.getHex());
                         objects[i].material.color.setHex(0xff8000);
                         reyebrowArray.push(i);
                         buildMarkerArray(state, i, objects[i].material.color.getHexString());
@@ -637,17 +663,18 @@ function onDocumentMouseDown( event ) {
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("L Eye point");
+                        getDefaultColor(i, objects[i].material.color.getHex());
                         objects[i].material.color.setHex(0x0040ff);
                         leyeArray.push(i);
                         buildMarkerArray(state, i, objects[i].material.color.getHexString());
                         }
                         break;
-
                       case 5:
                         resume = checkDuplicate(reyeArray, i);
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("R Eye point");
+                        getDefaultColor(i, objects[i].material.color.getHex());
                         objects[i].material.color.setHex(0x0080ff);
                         reyeArray.push(i);
                         buildMarkerArray(state, i, objects[i].material.color.getHexString());
@@ -659,6 +686,7 @@ function onDocumentMouseDown( event ) {
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("L Ear point");
+                        getDefaultColor(i, objects[i].material.color.getHex());
                         objects[i].material.color.setHex(0xbf00ff);
                         learArray.push(i);
                         buildMarkerArray(state, i, objects[i].material.color.getHexString());
@@ -670,17 +698,18 @@ function onDocumentMouseDown( event ) {
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("R Ear point");
+                        getDefaultColor(i, objects[i].material.color.getHex());
                         objects[i].material.color.setHex(0xff00ff);
                         rearArray.push(i);
                         buildMarkerArray(state, i, objects[i].material.color.getHexString());
                         }
                         break;
-
                       case 8:
                         resume = checkDuplicate(chinArray, i);
                         console.log("resume: " + resume);
                         if(resume == true){
                         console.log("chin point");
+                        getDefaultColor(i, objects[i].material.color.getHex());
                         objects[i].material.color.setHex(0x00ff00);
                         chinArray.push(i);
                         buildMarkerArray(state, i, objects[i].material.color.getHexString());
@@ -694,13 +723,9 @@ function onDocumentMouseDown( event ) {
                   }
 
                 }
-
-
                 //intersects[ 0 ].object.material.color.setHex( Math.random() * 0xffffff );
             }
         }
-
-
         //Create gui and handle gui events
         function displayGUI(){
                 var gui = new dat.GUI();
@@ -768,6 +793,17 @@ function onDocumentMouseDown( event ) {
                   this.Undo = function() {
                        undoPreviousDeletion();
                   }
+                  this.Reset = function() {
+                       resetStoredMarkerData();
+                       controller.Nose = str;
+                       controller.Leyebrow = str;
+                       controller.Reyebrow = str;
+                       controller.Leye = str;
+                       controller.Reye = str;
+                       controller.Lear = str;
+                       controller.Rear = str;
+                       controller.Chin = str;
+                  };
                   this.nullCheck = function(){
                     state = 0;
                     document.getElementById("info").innerHTML = "Null State";
@@ -838,6 +874,7 @@ function onDocumentMouseDown( event ) {
                   (controller.Chin) = chinArray;
                 }).listen();
                 labels.add(controller, 'Undo', false).name('Undo Deletion');
+                labels.add(controller, 'Reset', false).name('Reset All');
 
                 labels.add(controller, 'nullCheck').name('Null State');//.onChange(function(){
                   //state = 0;  //Null state
@@ -1002,7 +1039,67 @@ $(document).ready(function(){
 
 <body>
   <div id="info">Null State</div>
+  <div id="printinfo">Print</div>
+  <div id="cmds">Commands</div>
 
+  <style type="text/css">
+  #cmds {
+    position: absolute;
+    top: 0px;
+    left: 120px;
+    text-align: left;
+    z-index: 100;
+    white-space: pre-line;
+    word-wrap: break-word;
+    width: 200px;
+    display: none;
+    border: 1px solid black;
+    border-radius:3px;
+    color: #ffffff;
+    background-color:  #515a5a;
+    padding: 7px 7px 7px 7px;
+    font-family: arial;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  }
+
+  #printinfo {
+    position: absolute;
+    top: 120px;
+    left: 10px;
+    text-align: left;
+    white-space: pre-line;
+    word-wrap: break-word;
+    width: 150px;
+    z-index: 100;
+    display: none;
+    border: 1px solid black;
+    border-radius:3px;
+    color: #ffffff;
+    background-color:  #515a5a;
+    padding: 7px 7px 7px 7px;
+    font-family: arial;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  }
+
+  #info {
+   position: absolute;
+   top: 80px;
+   left: 10px;
+   text-align: left;
+   z-index: 100;
+   display:block;
+   border: 1px solid black;
+   border-radius:3px;
+   color: #ffffff;
+   background-color:  #515a5a;
+   padding: 7px 7px 7px 7px;
+   font-family: arial;
+   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+
+  }
+</style>
+
+ <!--
   <style type="text/css">
   #info {
   	position: absolute;
@@ -1013,7 +1110,6 @@ $(document).ready(function(){
   	display:block;
     border: 3px solid #73AD21;
     color: #ffffff
-
   }
   </style>
 
@@ -1051,9 +1147,7 @@ $(document).ready(function(){
     border: 3px solid #73AD21;
     color: #ffffff
   }
-
-
-  </style>
+  </style>-->
 
   <div class="leftPanel">
 
