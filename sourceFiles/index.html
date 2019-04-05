@@ -75,6 +75,9 @@ var chinArray = [];
 //Array that keeps track of marked vertices and edges
 var markerArray = [];
 
+//Array that keeps track of deleted markers for undo later.
+var delMarkerArr = [];
+
 //Formatted String that contains marker data
 var markerData = "";
 
@@ -89,14 +92,9 @@ var divElem, divObj;
 var i = 1;
 
 //php -S localhost:8080
-var input = document.querySelector("input[type=file]");
-var text = document.querySelector("textarea");
-var button = document.querySelector("input[type=button]");
-var name;
 
 init();
 animate();
-
 
 function init()
 {
@@ -369,10 +367,19 @@ function buildMarkerArray(state, objectIndex, color) {
 in the markerArray.*/
 function deleteFromMarkerArray(objectIndex) {
      var i;
+     var tempArr = [];
      for (i = 0; i <markerArray.length; i++){
-          if (markerArray[i][1] == objectIndex)
+          if (markerArray[i][1] == objectIndex) {
+               tempArr.push(markerArray[i][0]);
+               tempArr.push(markerArray[i][1]);
+               tempArr.push(markerArray[i][2]);
                markerArray.splice(i, 1);
+               delMarkerArr.push(tempArr);
+               console.log("Del Arrays");
+               console.log(delMarkerArr);
+          }
      }
+     console.log("Marker Arrays");
      console.log(markerArray);
 }
 
@@ -406,10 +413,10 @@ function buildMarkerDataString(listOfFeatures) {
                     else if (listOfFeatures[i][0] == 8)
                          stringData += "chinM ";
                }
-               //Color
+               //Object Index
                if (j == 1)
                     stringData +=  listOfFeatures[i][1] + " ";
-               //Vertex Index
+               //Color
                else if (j == 2)
                     stringData += listOfFeatures[i][2] + " "
           }
@@ -417,6 +424,65 @@ function buildMarkerDataString(listOfFeatures) {
      }
      stringData += "#MarkerEnd\n";
      return stringData;
+}
+
+/*Undos the most recent deletion of a marker by popping the most recent
+marker data from delMarkerArr, pushing the array to markerArray,
+pushing it back to the appropriate marker array, and reapplying the color.*/
+function undoPreviousDeletion(){
+     if (delMarkerArr.length == 0){
+          alert("There are no markers left to restore.");
+     }
+     else {
+          console.log(delMarkerArr.toString());
+          var singleMarker = delMarkerArr.pop();
+          console.log(singleMarker);
+          markerArray.push(singleMarker);
+          var labelState = singleMarker[0];
+          var index = singleMarker[1];
+
+          if (labelState == 1) {    //Nose
+               console.log("Nose point restored");
+               objects[index].material.color.setHex(0xff0000);
+               noseArray.push(index);
+          }
+          else if (labelState == 2) {    //Eyebrows
+               console.log("L Eyebrow point restored");
+               objects[index].material.color.setHex(0xff4000);
+               leyebrowArray.push(index);
+          }
+          else if (labelState == 3){
+               console.log("R Eyebrow point restored");
+               objects[index].material.color.setHex(0xff8000);
+               reyebrowArray.push(i);
+          }
+          else if (labelState == 4){
+               console.log("L Eye point restored");
+               objects[index].material.color.setHex(0x0040ff);
+               leyeArray.push(index);
+          }
+          else if (labelState == 5){
+               console.log("R Eye point restored");
+               objects[index].material.color.setHex(0x0080ff);
+               reyeArray.push(index);
+          }
+          else if (labelState == 6){
+               console.log("L Ear point restored");
+               objects[index].material.color.setHex(0xbf00ff);
+               learArray.push(index);
+          }
+          else if (labelState == 7){
+                    console.log("R Ear point restored");
+                    objects[index].material.color.setHex(0xff00ff);
+                    rearArray.push(index);
+          }
+          else if (labelState == 8){
+                    console.log("chin point restored");
+                    objects[index].material.color.setHex(0x00ff00);
+                    chinArray.push(index);
+          }
+          console.log(delMarkerArr.toString());
+        }
 }
 
 /*Use FileSaver.js to save marker data to file on client-side.*/
@@ -428,6 +494,7 @@ function exportMarkerData(){
 /*Reset marker variables for when user wants to restart marking the data again.*/
 function resetStoredMarkerData(){
      markerArray = [];
+     delMarkerArr = [];
      markerData = "";
 }
 
@@ -692,22 +759,15 @@ function onDocumentMouseDown( event ) {
                   this.Rear = str;
                   this.Chin = str;
                   this.Save = function () {
-                       //e.preventDefault();
-                      /*var blob = new Blob([text.value], {
-                           "type": "application/json"
-                      });
-                      var a = document.createElement("a");
-                      a.download = name;
-                      a.href = URL.createObjectURL(blob);
-                      document.body.appendChild(a);
-                      a.click();
-                      text.value = "";
-                      input.value = "";
-                      button.disabled = true;
-                      document.body.removeChild(a);*/
                       markerData = buildMarkerDataString(markerArray);
                       exportMarkerData();
                   };
+                  this.Load = function () {
+                      //Loader code goes here
+                  };
+                  this.Undo = function() {
+                       undoPreviousDeletion();
+                  }
                   this.nullCheck = function(){
                     state = 0;
                     document.getElementById("info").innerHTML = "Null State";
@@ -777,6 +837,7 @@ function onDocumentMouseDown( event ) {
                   matches(controller.Chin, 8, "Chin");
                   (controller.Chin) = chinArray;
                 }).listen();
+                labels.add(controller, 'Undo', false).name('Undo Deletion');
 
                 labels.add(controller, 'nullCheck').name('Null State');//.onChange(function(){
                   //state = 0;  //Null state
@@ -788,7 +849,8 @@ function onDocumentMouseDown( event ) {
                 methods.add(controller, 'Cmds', false).name('Show Commands').onChange(function(){
                   showCmds(controller.Cmds);
                 });
-                methods.add(controller, 'Save', false).name('Save Markers');
+                methods.add(controller, 'Save', false).name('Export Markers');
+                methods.add(controller, 'Load', false).name('Import Markers');
 
 
                 gui.open();
@@ -951,6 +1013,7 @@ $(document).ready(function(){
   	display:block;
     border: 3px solid #73AD21;
     color: #ffffff
+
   }
   </style>
 
@@ -1001,11 +1064,7 @@ $(document).ready(function(){
   <div class="rightPanel">
 
     <div id="logLive" ></div>
-
      <!--<ol>
-
-
-
 	</ol>-->
  <!--<select id="labelName">
 		<option>hair line</option>
@@ -1022,45 +1081,6 @@ $(document).ready(function(){
 	<button id="btn2">Create Label</button>-->
 
   </div>
-
-<!--  <script>
-
-
-var input = document.querySelector("input[type=file]");
-var text = document.querySelector("textarea");
-var button = document.querySelector("input[type=button]");
-var name;
-
-input.onchange = function(e) {
-var reader = new FileReader();
-reader.onload = function(event) {
- text.value = event.target.result;
- button.disabled = false;
-}
-name = e.target.files[0].name;
-reader.readAsText(new Blob([e.target.files[0]], {
- "type": "application/json"
-}));
-}
-
-button.onclick = function(e) {
-e.preventDefault();
-var blob = new Blob([text.value], {
- "type": "application/json"
-});
-var a = document.createElement("a");
-a.download = name;
-a.href = URL.createObjectURL(blob);
-document.body.appendChild(a);
-a.click();
-text.value = "";
-input.value = "";
-button.disabled = true;
-document.body.removeChild(a);
-}
-</script>-->
-
-
 </body>
 
 
