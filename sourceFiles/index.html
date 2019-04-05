@@ -13,6 +13,7 @@
 	<!--script type="text/javascript" src="js/OBJLoader.js"></script-->
 	<script type="text/javascript" src="https://rawgit.com/mrdoob/three.js/master/examples/js/loaders/OBJLoader.js"></script>
   <script src="http://mrdoob.github.io/stats.js/build/stats.min.js"></script>
+  <script src="https://rawgit.com/eligrey/FileSaver.js/master/src/FileSaver.js"></script>
   <script src="js/custom/sphereMesh.js"></script>
   <script src = "js/dat.gui.min.js"></script>
 
@@ -53,28 +54,45 @@ body {
 var stats = new Stats();
 stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
 
+/*Variables*/
+
+//Main viewing scene that obj loads to
 var scene;
+
+//Array of face Vertices and Edges
 var objects = [];
 
+//Arrays of each corresponding marker data.
 var noseArray = [];
-
 var leyebrowArray = [];
 var reyebrowArray = [];
-
 var leyeArray = [];
 var reyeArray = [];
-
 var learArray = [];
 var rearArray = [];
-
 var chinArray = [];
 
+//Array that keeps track of marked vertices and edges
+var markerArray = [];
+
+//Formatted String that contains marker data
+var markerData = "";
+
+//Used for raycaster
 var mouse3D;
+
+//Integer var that keeps track of marker kind.
 var state;
 window.onload=function(){
 var renderer, camera, control, sphereGeo;
 var divElem, divObj;
 var i = 1;
+
+//php -S localhost:8080
+var input = document.querySelector("input[type=file]");
+var text = document.querySelector("textarea");
+var button = document.querySelector("input[type=button]");
+var name;
 
 init();
 animate();
@@ -272,10 +290,6 @@ function getEdges(geometry)
   }
 
   return vertices;
-
-
-
-
 }
 
 
@@ -340,8 +354,86 @@ function cylinderMesh(pointX, pointY, material) {
 
 }*/
 
+/*Pushes the state, index, and color of a marked vertex into the
+markerArray which will be exported to file.*/
+function buildMarkerArray(state, objectIndex, color) {
+     var tempMarkerArray = [];
+     tempMarkerArray.push(state);
+     tempMarkerArray.push(objectIndex);
+     tempMarkerArray.push(color);
+     markerArray.push(tempMarkerArray);
+     console.log(markerArray);
+}
+
+/*Deletes the array of marker data for an element of the specified index
+in the markerArray.*/
+function deleteFromMarkerArray(objectIndex) {
+     var i;
+     for (i = 0; i <markerArray.length; i++){
+          if (markerArray[i][1] == objectIndex)
+               markerArray.splice(i, 1);
+     }
+     console.log(markerArray);
+}
+
+/*Returns a formatted string detailing marker data, such as marker label,
+index, and color*/
+function buildMarkerDataString(listOfFeatures) {
+     var i;
+     var j;
+     var stringData = "";
+     var NUM_OF_COLS = 3;
+     var NUM_OF_ROWS = listOfFeatures.length;
+     stringData += "#MarkerStart\n";
+     for (i = 0; i < NUM_OF_ROWS; i++) {
+          for (j = 0; j < NUM_OF_COLS; j++) {
+               //MarkerType
+               if (j == 0) {
+                    if (listOfFeatures[i][0] == 1)
+                         stringData += "noseM ";
+                    else if (listOfFeatures[i][0] == 2)
+                         stringData += "l-eyebrowM ";
+                    else if (listOfFeatures[i][0] == 3)
+                         stringData += "r-eyebrowM ";
+                    else if (listOfFeatures[i][0] == 4)
+                         stringData += "l-eyeM ";
+                    else if (listOfFeatures[i][0] == 5)
+                         stringData += "r-eyeM ";
+                    else if (listOfFeatures[i][0] == 6)
+                         stringData += "l-earM ";
+                    else if (listOfFeatures[i][0] == 7)
+                         stringData += "r-earM ";
+                    else if (listOfFeatures[i][0] == 8)
+                         stringData += "chinM ";
+               }
+               //Color
+               if (j == 1)
+                    stringData +=  listOfFeatures[i][1] + " ";
+               //Vertex Index
+               else if (j == 2)
+                    stringData += listOfFeatures[i][2] + " "
+          }
+          stringData += "\n";
+     }
+     stringData += "#MarkerEnd\n";
+     return stringData;
+}
+
+/*Use FileSaver.js to save marker data to file on client-side.*/
+function exportMarkerData(){
+     var blob = new Blob([markerData], {type: "text/plain;charset=utf-8"});
+     saveAs(blob, "Marker.md");
+}
+
+/*Reset marker variables for when user wants to restart marking the data again.*/
+function resetStoredMarkerData(){
+     markerArray = [];
+     markerData = "";
+}
+
 //raycast on mouse down
 function onDocumentMouseDown( event ) {
+
             //event.preventDefault();
             var mouse3D = new THREE.Vector2( ( event.clientX / window.innerWidth ) * 2 - 1,
                                     -( event.clientY / window.innerHeight ) * 2 + 1);
@@ -401,44 +493,53 @@ function onDocumentMouseDown( event ) {
 
                       case -1:
                         deleteIndex(noseArray, i);
+                        deleteFromMarkerArray(i);
                         break;
 
                       case -2:
                         deleteIndex(leyebrowArray, i);
+                        deleteFromMarkerArray(i);
                         break;
 
                       case -3:
                         deleteIndex(reyebrowArray, i);
+                        deleteFromMarkerArray(i);
                         break;
 
                       case -4:
 
                         deleteIndex(leyeArray, i);
+                        deleteFromMarkerArray(i);
                         break;
 
                       case -5:
                         deleteIndex(reyeArray, i);
+                        deleteFromMarkerArray(i);
                         break;
 
                       case -6:
                         deleteIndex(learArray, i);
+                        deleteFromMarkerArray(i);
                         break;
 
                       case -7:
                         deleteIndex(rearArray, i);
+                        deleteFromMarkerArray(i);
                         break;
 
                       case -8:
                         deleteIndex(chinArray, i);
+                        deleteFromMarkerArray(i);
                         break;
 
                       case 1:     //Nose
                         resume = checkDuplicate(noseArray, i);  //duplicate?
                         console.log("resume: " + resume);
                         if(resume == true){
-                        console.log("Nose point");
-                        objects[i].material.color.setHex(0xff0000);   //see selection
-                        noseArray.push(i);  //not duplicate, so push (index) to array
+                            console.log("Nose point");
+                            objects[i].material.color.setHex(0xff0000);   //see selection
+                            noseArray.push(i);  //not duplicate, so push (index) to array
+                            buildMarkerArray(state, i, objects[i].material.color.getHexString());
                         }
                         break;
 
@@ -449,6 +550,7 @@ function onDocumentMouseDown( event ) {
                         console.log("L Eyebrow point");
                         objects[i].material.color.setHex(0xff4000);
                         leyebrowArray.push(i);
+                        buildMarkerArray(state, i, objects[i].material.color.getHexString());
                         }
                         break;
 
@@ -459,6 +561,7 @@ function onDocumentMouseDown( event ) {
                         console.log("R Eyebrow point");
                         objects[i].material.color.setHex(0xff8000);
                         reyebrowArray.push(i);
+                        buildMarkerArray(state, i, objects[i].material.color.getHexString());
                         }
                         break;
                       //Eyes
@@ -469,6 +572,7 @@ function onDocumentMouseDown( event ) {
                         console.log("L Eye point");
                         objects[i].material.color.setHex(0x0040ff);
                         leyeArray.push(i);
+                        buildMarkerArray(state, i, objects[i].material.color.getHexString());
                         }
                         break;
 
@@ -479,6 +583,7 @@ function onDocumentMouseDown( event ) {
                         console.log("R Eye point");
                         objects[i].material.color.setHex(0x0080ff);
                         reyeArray.push(i);
+                        buildMarkerArray(state, i, objects[i].material.color.getHexString());
                         }
                         break;
                       //Ears
@@ -489,6 +594,7 @@ function onDocumentMouseDown( event ) {
                         console.log("L Ear point");
                         objects[i].material.color.setHex(0xbf00ff);
                         learArray.push(i);
+                        buildMarkerArray(state, i, objects[i].material.color.getHexString());
                         }
                         break;
 
@@ -499,6 +605,7 @@ function onDocumentMouseDown( event ) {
                         console.log("R Ear point");
                         objects[i].material.color.setHex(0xff00ff);
                         rearArray.push(i);
+                        buildMarkerArray(state, i, objects[i].material.color.getHexString());
                         }
                         break;
 
@@ -509,6 +616,7 @@ function onDocumentMouseDown( event ) {
                         console.log("chin point");
                         objects[i].material.color.setHex(0x00ff00);
                         chinArray.push(i);
+                        buildMarkerArray(state, i, objects[i].material.color.getHexString());
                         }
                         break;
 
@@ -583,6 +691,23 @@ function onDocumentMouseDown( event ) {
                   this.Lear = str;
                   this.Rear = str;
                   this.Chin = str;
+                  this.Save = function () {
+                       //e.preventDefault();
+                      /*var blob = new Blob([text.value], {
+                           "type": "application/json"
+                      });
+                      var a = document.createElement("a");
+                      a.download = name;
+                      a.href = URL.createObjectURL(blob);
+                      document.body.appendChild(a);
+                      a.click();
+                      text.value = "";
+                      input.value = "";
+                      button.disabled = true;
+                      document.body.removeChild(a);*/
+                      markerData = buildMarkerDataString(markerArray);
+                      exportMarkerData();
+                  };
                   this.nullCheck = function(){
                     state = 0;
                     document.getElementById("info").innerHTML = "Null State";
@@ -663,6 +788,8 @@ function onDocumentMouseDown( event ) {
                 methods.add(controller, 'Cmds', false).name('Show Commands').onChange(function(){
                   showCmds(controller.Cmds);
                 });
+                methods.add(controller, 'Save', false).name('Save Markers');
+
 
                 gui.open();
               }
@@ -862,6 +989,7 @@ $(document).ready(function(){
     color: #ffffff
   }
 
+
   </style>
 
   <div class="leftPanel">
@@ -873,7 +1001,10 @@ $(document).ready(function(){
   <div class="rightPanel">
 
     <div id="logLive" ></div>
-	<!--<ol>
+
+     <!--<ol>
+
+
 
 	</ol>-->
  <!--<select id="labelName">
@@ -891,6 +1022,43 @@ $(document).ready(function(){
 	<button id="btn2">Create Label</button>-->
 
   </div>
+
+<!--  <script>
+
+
+var input = document.querySelector("input[type=file]");
+var text = document.querySelector("textarea");
+var button = document.querySelector("input[type=button]");
+var name;
+
+input.onchange = function(e) {
+var reader = new FileReader();
+reader.onload = function(event) {
+ text.value = event.target.result;
+ button.disabled = false;
+}
+name = e.target.files[0].name;
+reader.readAsText(new Blob([e.target.files[0]], {
+ "type": "application/json"
+}));
+}
+
+button.onclick = function(e) {
+e.preventDefault();
+var blob = new Blob([text.value], {
+ "type": "application/json"
+});
+var a = document.createElement("a");
+a.download = name;
+a.href = URL.createObjectURL(blob);
+document.body.appendChild(a);
+a.click();
+text.value = "";
+input.value = "";
+button.disabled = true;
+document.body.removeChild(a);
+}
+</script>-->
 
 
 </body>
