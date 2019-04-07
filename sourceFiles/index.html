@@ -54,7 +54,7 @@ window.onload=function(){
 var renderer, camera, control, sphereGeo;
 var divElem, divObj;
 var i = 1;
-
+var loader;
 //php -S localhost:8080
 
 init();
@@ -79,7 +79,7 @@ function init() {
      //var gridHelper = new THREE.GridHelper( size, divisions );
      //scene.add( gridHelper );
 	// instantiate a loader
-     var loader = new THREE.OBJLoader();
+     loader = new THREE.OBJLoader();
      // load a resource
      var light = new THREE.PointLight( 0xffffff, 1, 20 );
      light.position.set( 0, 0, 2 );
@@ -152,6 +152,87 @@ function init() {
      displayGUI(); //function call for gui
      //showCoords(event);
      //document.addEventListener("click", showCoords);
+	 		  selectElement = document.querySelector('#objBrowseInput');
+		  selectElement.addEventListener('change', (event) => {
+				//const result = document.querySelector('.result');
+				//result.textContent = `You like ${event.target.value}`;
+			var fullPath = document.getElementById('objBrowseInput').value;
+		    var filename;
+			if (fullPath) {
+				var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
+				filename = fullPath.substring(startIndex);
+				if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
+					filename = filename.substring(1);
+				}
+				//alert(filename);
+			}
+		  
+		  //return filename;
+		  loader.load(
+	     // resource URL
+	     'obj/'+filename,
+	     // called when resource is loaded
+	     function ( obje ) {
+	          var material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} );
+               obje.traverse( function ( child ) {
+      			if ( child.isMesh ){
+					child.material = material;
+	      	     }
+		     } );
+               //scene.add( obje );
+	          var bb = new THREE.Box3()
+               bb.setFromObject(obje);
+               bb.getCenter(control.target);
+	          var cubeGeo = new THREE.Geometry().fromBufferGeometry( obje.children[0].geometry );
+               cubeGeo.mergeVertices();  //removes duplicate vertices
+               //cubeGeo.center();
+	          //var cubeGeo =  obje.children[0].geometry;//new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
+               /*Start of Spheres*/
+               //cubeGeo = new THREE.SphereGeometry(1,7,7);
+               sphereGeo = cubeGeo;
+               var cubeMaterial = new THREE.MeshBasicMaterial(  );
+               var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
+               console.log("verts: " + cubeMesh.geometry.vertices.length);
+               var eGeometry = new THREE.EdgesGeometry( cubeMesh.geometry );
+               var eMaterial = new THREE.LineBasicMaterial( { color: 0x00ff00, linewidth: 1 } );
+               var edges = new THREE.LineSegments( eGeometry, eMaterial );
+               //cubeMesh.add( edges );
+               //scene.add(cubeMesh);
+               //add spheres to mesh, push to objects[], add to scene
+               sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
+               console.log("objects size: "+ objects.length);
+               //console.log( "Geometry: "+cubeMesh.geometry.isGeometry );
+	          //var ageometry = new THREE.Geometry().fromBufferGeometry( cubeMesh.geometry );
+               var edgelist = getEdges(cubeMesh.geometry);//cubeMesh.geometry
+               //console.log("edgelist: "+edgelist.length);
+               for(var i=0; i<cubeMesh.geometry.vertices.length; i++) {
+                    eu = edgelist[i].filter(onlyUnique);
+                    //console.log("edgelist: "+i+": "+eu);
+                    for(var j=0; j<eu.length; j++) {
+                         //console.log("e: "+i+","+eu[j]);
+                         var cyMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
+                         var cylinder = cylinderMesh(cubeGeo.vertices[i], cubeGeo.vertices[eu[j]], cyMaterial);
+                         scene.add(cylinder);
+                         objects.push(cylinder);
+                         objects[cylinder.uuid] = cylinder;
+                    }
+               }
+               console.log("objects size: "+ objects.length);
+               console.log("edges: " + (objects.length - cubeMesh.geometry.vertices.length));
+               //add spheres to mesh, push to objects[], add to scene
+               //sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
+	     },
+	     // called when loading is in progresses
+	     function ( xhr ) {
+		     console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+          },
+	     // called when loading has errors
+	     function ( error ) {
+		     console.log( 'An error happened' );
+	     }
+		);
+		
+		});
      document.addEventListener( 'mousedown', onDocumentMouseDown );
      window.addEventListener( 'resize', onWindowResize, false );
      function onWindowResize() {
@@ -639,6 +720,19 @@ function displayGUI(){
                document.getElementById("cmds").style.display = "none";
           }
      }
+     function ObjBrowse(boolean){
+		  document.getElementById("objBrowseInput").click();
+          if(boolean == true) {
+               //document.getElementById("cmds").innerHTML = "Click anywhere on label text field then type commands: " + "\nadd" + "\ndel"
+                                                         + "\nThen press Enter";
+               //document.getElementById("cmds").style.display = "block";
+          }
+          else {
+               //document.getElementById("cmds").style.display = "none";
+          }
+		  
+
+     }	 
      var str = "-";
      var controller = new function(){
           this.Nose = str;
@@ -676,6 +770,7 @@ function displayGUI(){
           };
           this.Print = false;
           this.Cmds = false;
+		  this.ObjBrowse = false;
      }();
      //Regex for "add" and "del"
      function matches(locController, stateVal, name){
@@ -742,6 +837,9 @@ function displayGUI(){
      }).listen();
      methods.add(controller, 'Cmds', false).name('Show Commands').onChange(function(){
           showCmds(controller.Cmds);
+     });
+	 methods.add(controller, 'ObjBrowse', false).name('Load Obj').onChange(function(){
+          ObjBrowse(controller.ObjBrowse);
      });
      methods.add(controller, 'Save', false).name('Export Markers');
      methods.add(controller, 'Load', false).name('Import Markers');
@@ -928,6 +1026,7 @@ $(document).ready(function(){
      <div id="info">Null State</div>
      <div id="printinfo">Print</div>
      <div id="cmds">Commands</div>
+	 <input style="visibility:hidden;" type="file" id="objBrowseInput"/>
      <div class="leftPanel">
           <div id="log" ></div>
      </div>
