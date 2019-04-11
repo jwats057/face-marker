@@ -55,6 +55,7 @@ var renderer, camera, control, sphereGeo;
 var divElem, divObj;
 var i = 1;
 var loader;
+var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0xD3D3D3, wireframe: false} );
 //php -S localhost:8080
 
 init();
@@ -110,13 +111,13 @@ function init() {
 	     'obj/'+filename,
 	     // called when resource is loaded
 	     function ( obje ) {
-	          var material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} );
+	          var material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: false} );
                obje.traverse( function ( child ) {
       			if ( child.isMesh ){
 					child.material = material;
 	      	     }
 		     } );
-               //scene.add( obje );
+              //scene.add( obje );
 	          var bb = new THREE.Box3()
                bb.setFromObject(obje);
                bb.getCenter(control.target);
@@ -127,14 +128,14 @@ function init() {
                /*Start of Spheres*/
                //cubeGeo = new THREE.SphereGeometry(1,7,7);
                sphereGeo = cubeGeo;
-               var cubeMaterial = new THREE.MeshBasicMaterial(  );
+               //var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0x0000ff, wireframe: false} );
                var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
                console.log("verts: " + cubeMesh.geometry.vertices.length);
                var eGeometry = new THREE.EdgesGeometry( cubeMesh.geometry );
                var eMaterial = new THREE.LineBasicMaterial( { color: 0x00ff00, linewidth: 1 } );
                var edges = new THREE.LineSegments( eGeometry, eMaterial );
                //cubeMesh.add( edges );
-               //scene.add(cubeMesh);
+               scene.add(cubeMesh);
                //add spheres to mesh, push to objects[], add to scene
                sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
                console.log("objects size: "+ objects.length);
@@ -790,6 +791,7 @@ function displayGUI(){
           };
           this.Print = false;
           this.Cmds = false;
+		  this.Wireframe = false;
           this.ObjBrowse = function(){
             document.getElementById("objBrowseInput").click();
           };
@@ -859,6 +861,9 @@ function displayGUI(){
      }).listen();
      methods.add(controller, 'Cmds', false).name('Show Commands').onChange(function(){
           showCmds(controller.Cmds);
+     });
+	 methods.add(controller, 'Wireframe', false).onChange(function(){
+          cubeMaterial.wireframe = controller.Wireframe;
      });
 
 	   methods.add(controller, 'ObjBrowse').name('Load Obj');
