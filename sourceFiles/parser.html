@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+
+    <h1>OBJ Parser</h1>
+    <button onclick="document.getElementById('objFile').click();">Select OBJ</button>
+    <input id="objFile" type="file" style="display: none;" />
+    <button id="submit">Parse</button>
+    <textarea id="input" rows=50 cols=50></textarea>
+    <textarea id="output" rows=50 cols=50></textarea>
+    <script>
+        document.getElementById("objFile").addEventListener("change", getFile);
+        document.getElementById("submit").addEventListener("click", parseObj);
+
+        // Next three functions are for reading the obj file and outputting it to a textarea
+        function getFile(event) {
+            const input = event.target;
+            console.log(input);
+            if ('files' in input && input.files.length > 0) {
+
+                placeFileContent(
+                    document.getElementById('input'),
+                    input.files[0]);
+            }
+        }
+
+        function placeFileContent(target, file) {
+
+            readFileContent(file).then(content => {
+                target.value = content
+            }).catch(error => console.log(error));
+        }
+
+        function readFileContent(file) {
+
+            const reader = new FileReader();
+            return new Promise((resolve, reject) => {
+                reader.onload = event => resolve(event.target.result);
+                reader.onerror = error => reject(error);
+                reader.readAsText(file);
+            });
+        }
+
+
+        var vertices = [];          // Will store vertex data as written
+        var vertices2 = [];         // Will convert the label name to its proper state number
+
+
+        // Parsing Function
+        function parseObj() {
+
+            var mainText = document.getElementById("input").value;
+            if (mainText.indexOf('#MarkerStart') == -1) {
+                alert("Obj file has no marker data");
+            }
+            else {
+                mainText = mainText.substring(mainText.indexOf('#MarkerStart') + 1);      // Find beginning of marker comments
+                mainText = mainText.substring(mainText.indexOf("# ") + 2);                // Move to first marker data
+
+                while (mainText.indexOf('#MarkerEnd') != 0) {                           // Iterate through markers
+                    var line = mainText.substring(0, mainText.indexOf('#'));
+                    vertices.push(line.split(" "));
+                    // Checks if there is another marker
+                    if (mainText.indexOf("# ") != -1) {
+                        mainText = mainText.substring(mainText.indexOf("# ") + 2);
+                    }
+                    else {
+                        mainText = mainText.substring(mainText.indexOf("#MarkerEnd"));
+                    }
+                }
+
+            }
+
+            // Converting the label names to their state number
+            vertices2 = vertices;
+            for (var i = 0; i < vertices2.length; i++) {
+                switch (vertices2[i][0]) {
+                    case 'nosev':
+                        vertices2[i][0] = 1;
+                        break;
+                    case 'leyebrowv':
+                        vertices2[i][0] = 2;
+                        break;
+                    case 'reyebrowv':
+                        vertices2[i][0] = 3;
+                        break;
+                    case 'leyev':
+                        vertices2[i][0] = 4;
+                        break;
+                    case 'reyev':
+                        vertices2[i][0] = 5;
+                        break;
+                    case 'learv':
+                        vertices2[i][0] = 6;
+                        break;
+                    case 'rearv':
+                        vertices2[i][0] = 7;
+                        break;
+                    case 'chinv':
+                        vertices2[i][0] = 8;
+                        break;
+
+                }
+            }
+
+            //Output Generation
+            var output = "Generated 2D array containing the following vertices: \n\n";
+            for (var i = 0; i < vertices2.length; i++) {
+                output += "[" + i + "] " + vertices2[i] + "\n";
+            }
+
+            document.getElementById("output").innerHTML = output;
+        }
+
+
+    </script>
+</body>
+
+</html>

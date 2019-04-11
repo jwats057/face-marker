@@ -84,6 +84,7 @@ function init() {
      var light = new THREE.PointLight( 0xffffff, 1, 20 );
      light.position.set( 0, 0, 2 );
      scene.add(light);
+
 	 //alert(window.location.href);
 	 var filenamex = window.location.href.split("?");
 	 if(filenamex.length == 1){filenamex[1]='face.obj';}
@@ -150,6 +151,7 @@ function init() {
 		     console.log( 'An error happened' );
 	     }
      );
+
      //console.log("objects size: "+ objects.length);
      //showLog();
      displayGUI(); //function call for gui
@@ -170,6 +172,7 @@ function init() {
 				}
 				//alert(fullPath);
 			}
+
 		  
 		    if(window.location.href.includes('?')){
 				var filenamex = window.location.href.split("?");
@@ -178,6 +181,7 @@ function init() {
 			} else{
 				window.location.href = window.location.href + "?" + filename;
 			}
+
 		});
      document.addEventListener( 'mousedown', onDocumentMouseDown );
      window.addEventListener( 'resize', onWindowResize, false );
@@ -239,45 +243,6 @@ function cylinderMesh(pointX, pointY, material) {
      edge.position.z = (pointY.z + pointX.z) / 2;
      return edge;
 }
-
-/*function onDocumentMouseDown( event ) {
-            //event.preventDefault();
-
-			mouse3D.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-			mouse3D.y = -( event.clientY / window.innerHeight ) * 2 + 1;
-			raycaster.setFromCamera( mouse3D, camera );
-            var intersects = raycaster.intersectObjects( scene.children);
-
-            if ( intersects.length > 0 ) {
-                console.log("intersects.length: "+intersects.length);
-
-                //console.log("intersected objects position: "+intersects[ 0 ].object.uuid);
-
-				for ( var i = 0; i < intersects.length; i++ ) {
-				var uuidtemp = intersects[i].object.uuid;
-				//console.log("uuid: "+uuidtemp);
-
-				if (objects.hasOwnProperty(uuidtemp)){
-				    var objID = intersects[ i ].object.id;
-                    console.log("We got object: "+objID+" Random:"+Math.random());
-					//objects[intersects[ 0 ].object.uuid].material.color.setHex( Math.random() * 0xffffff );
-					//scene.updateMatrixWorld(true);
-					var pt = new THREE.Vector3();
-					pt.setFromMatrixPosition( intersects[ i ].object.matrixWorld );
-					console.log("position pt: x:"+pt.x+" y:"+pt.y+" z:"+pt.z);
-                    intersects[ i ].object.material.color.setHex( Math.random() * 0xffffff );
-
-					if(lastInputID != 0){
-						//$('#'+lastInputID).val(objID+','+$('#'+lastInputID).val());//$('#'+lastInputID).val()+","+i);
-						//var trimmed = $('#'+lastInputID).val().replace(/(^[,\s]+)|([,\s]+$)/g, '');
-						//$('#'+lastInputID).val(trimmed);
-					}
-				}
-                }
-                //intersects[ 0 ].object.material.color.setHex( Math.random() * 0xffffff );
-        }
-
-}*/
 
 /*Pushes the state, index, and color of a marked vertex into the
 markerArray which will be exported to file.*/
@@ -625,31 +590,17 @@ function onDocumentMouseDown( event ) {
 //Create gui and handle gui events
 function displayGUI(){
      var gui = new dat.GUI();
-     /*var jar;
 
-     var parameters = {
-         a: "NosePoints",
-         b: "Eyebrows",
-         c: false
-     }*/
      function printArrays(boolean){
+       document.getElementById("printinfo").innerHTML = "Nose: " + noseArray
+                                                   + "\nL Eyebrow: " + leyebrowArray
+                                                   + "\nR Eyebrow: " + reyebrowArray
+                                                   + "\nL Eye: " + leyeArray
+                                                   + "\nR Eye: " + reyeArray
+                                                   + "\nL Ear: " + learArray
+                                                   + "\nR Ear: " + rearArray
+                                                   + "\nChin: " + chinArray;
           if(boolean == true){
-               console.log("Nose: " + noseArray);
-               console.log("L Eyebrow: " + leyebrowArray);
-               console.log("R Eyebrow: " + reyebrowArray);
-               console.log("L Eye: " + leyeArray);
-               console.log("R Eye: " + reyeArray);
-               console.log("L Ear: " + learArray);
-               console.log("R Ear: " + rearArray);
-               console.log("Chin: " + chinArray);
-               document.getElementById("printinfo").innerHTML = "Nose: " + noseArray
-                                                           + "\nL Eyebrow: " + leyebrowArray
-                                                           + "\nR Eyebrow: " + reyebrowArray
-                                                           + "\nL Eye: " + leyeArray
-                                                           + "\nR Eye: " + reyeArray
-                                                           + "\nL Ear: " + learArray
-                                                           + "\nR Ear: " + rearArray
-                                                           + "\nChin: " + chinArray;
                document.getElementById("printinfo").style.display = "block";
           }
           else {
@@ -676,9 +627,9 @@ function displayGUI(){
           else {
                //document.getElementById("cmds").style.display = "none";
           }
-		  
 
-     }	 
+
+     }
      var str = "-";
      var controller = new function(){
           this.Nose = str;
@@ -716,7 +667,9 @@ function displayGUI(){
           };
           this.Print = false;
           this.Cmds = false;
-		  this.ObjBrowse = false;
+          this.ObjBrowse = function(){
+            document.getElementById("objBrowseInput").click();
+          };
      }();
      //Regex for "add" and "del"
      function matches(locController, stateVal, name){
@@ -784,9 +737,8 @@ function displayGUI(){
      methods.add(controller, 'Cmds', false).name('Show Commands').onChange(function(){
           showCmds(controller.Cmds);
      });
-	 methods.add(controller, 'ObjBrowse', false).name('Load Obj').onChange(function(){
-          ObjBrowse(controller.ObjBrowse);
-     });
+
+	   methods.add(controller, 'ObjBrowse').name('Load Obj');
      methods.add(controller, 'Save', false).name('Export Markers');
      methods.add(controller, 'Load', false).name('Import Markers');
      gui.open();
@@ -824,6 +776,17 @@ function showCoords(event) {
      alert(pos2.x+" "+pos2.y);
 }
 
+function printArraysLive(){
+		document.getElementById("printinfo").innerHTML = "Nose: " + noseArray
+                                                           + "\nL Eyebrow: " + leyebrowArray
+                                                           + "\nR Eyebrow: " + reyebrowArray
+                                                           + "\nL Eye: " + leyeArray
+                                                           + "\nR Eye: " + reyeArray
+                                                           + "\nL Ear: " + learArray
+                                                           + "\nR Ear: " + rearArray
+                                                           + "\nChin: " + chinArray;
+	 }
+
 function animate() {
      requestAnimationFrame( animate );
      update();
@@ -833,6 +796,7 @@ function animate() {
 
 function update() {
     control.update();
+    printArraysLive();
 }
 
 function render() {
