@@ -86,6 +86,74 @@
                     var light = new THREE.PointLight(0xffffff, 1, 20);
                     light.position.set(0, 0, 2);
                     scene.add(light);
+
+                    //alert(window.location.href);
+                    var filenamex = window.location.href.split("?");
+                    if (filenamex.length == 1) { filenamex[1] = 'face.obj'; }
+                    loader.load(
+                         // resource URL
+                         'obj/' + filenamex[1],
+                         // called when resource is loaded
+                         function (obje) {
+                              var material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+                              obje.traverse(function (child) {
+                                   if (child.isMesh) {
+                                        child.material = material;
+                                   }
+                              });
+                              //scene.add( obje );
+                              var bb = new THREE.Box3()
+                              bb.setFromObject(obje);
+                              bb.getCenter(control.target);
+                              var cubeGeo = new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
+                              cubeGeo.mergeVertices();  //removes duplicate vertices
+                              //cubeGeo.center();
+                              //var cubeGeo =  obje.children[0].geometry;//new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
+                              /*Start of Spheres*/
+                              //cubeGeo = new THREE.SphereGeometry(1,7,7);
+                              sphereGeo = cubeGeo;
+                              var cubeMaterial = new THREE.MeshBasicMaterial();
+                              var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
+                              console.log("verts: " + cubeMesh.geometry.vertices.length);
+                              var eGeometry = new THREE.EdgesGeometry(cubeMesh.geometry);
+                              var eMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 1 });
+                              var edges = new THREE.LineSegments(eGeometry, eMaterial);
+                              //cubeMesh.add( edges );
+                              //scene.add(cubeMesh);
+                              //add spheres to mesh, push to objects[], add to scene
+                              sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
+                              console.log("objects size: " + objects.length);
+                              //console.log( "Geometry: "+cubeMesh.geometry.isGeometry );
+                              //var ageometry = new THREE.Geometry().fromBufferGeometry( cubeMesh.geometry );
+                              var edgelist = getEdges(cubeMesh.geometry);//cubeMesh.geometry
+                              //console.log("edgelist: "+edgelist.length);
+                              for (var i = 0; i < cubeMesh.geometry.vertices.length; i++) {
+                                   eu = edgelist[i].filter(onlyUnique);
+                                   //console.log("edgelist: "+i+": "+eu);
+                                   for (var j = 0; j < eu.length; j++) {
+                                        //console.log("e: "+i+","+eu[j]);
+                                        var cyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                                        var cylinder = cylinderMesh(cubeGeo.vertices[i], cubeGeo.vertices[eu[j]], cyMaterial);
+                                        scene.add(cylinder);
+                                        objects.push(cylinder);
+                                        objects[cylinder.uuid] = cylinder;
+                                   }
+                              }
+                              console.log("objects size: " + objects.length);
+                              console.log("edges: " + (objects.length - cubeMesh.geometry.vertices.length));
+                              //add spheres to mesh, push to objects[], add to scene
+                              //sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
+                         },
+                         // called when loading is in progresses
+                         function (xhr) {
+                              console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                         },
+                         // called when loading has errors
+                         function (error) {
+                              console.log('An error happened');
+                         }
+                    );
+
                     //console.log("objects size: "+ objects.length);
                     //showLog();
                     displayGUI(); //function call for gui
@@ -95,6 +163,7 @@
                     selectElement.addEventListener('change', (event) => {
                          //const result = document.querySelector('.result');
                          //result.textContent = `You like ${event.target.value}`;
+                         //alert(document.getElementById("objBrowseInput").files[0].path);
                          var fullPath = document.getElementById('objBrowseInput').value;
                          var filename;
                          if (fullPath) {
@@ -103,73 +172,17 @@
                               if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
                                    filename = filename.substring(1);
                               }
-                              //alert(filename);
+                              //alert(fullPath);
                          }
 
-                         //return filename;
-                         loader.load(
-                              // resource URL
-                              'obj/' + filename,
-                              // called when resource is loaded
-                              function (obje) {
-                                   var material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
-                                   obje.traverse(function (child) {
-                                        if (child.isMesh) {
-                                             child.material = material;
-                                        }
-                                   });
-                                   //scene.add( obje );
-                                   var bb = new THREE.Box3()
-                                   bb.setFromObject(obje);
-                                   bb.getCenter(control.target);
-                                   var cubeGeo = new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
-                                   cubeGeo.mergeVertices();  //removes duplicate vertices
-                                   //cubeGeo.center();
-                                   //var cubeGeo =  obje.children[0].geometry;//new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
-                                   /*Start of Spheres*/
-                                   //cubeGeo = new THREE.SphereGeometry(1,7,7);
-                                   sphereGeo = cubeGeo;
-                                   var cubeMaterial = new THREE.MeshBasicMaterial();
-                                   var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
-                                   console.log("verts: " + cubeMesh.geometry.vertices.length);
-                                   var eGeometry = new THREE.EdgesGeometry(cubeMesh.geometry);
-                                   var eMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 1 });
-                                   var edges = new THREE.LineSegments(eGeometry, eMaterial);
-                                   //cubeMesh.add( edges );
-                                   //scene.add(cubeMesh);
-                                   //add spheres to mesh, push to objects[], add to scene
-                                   sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
-                                   console.log("objects size: " + objects.length);
-                                   //console.log( "Geometry: "+cubeMesh.geometry.isGeometry );
-                                   //var ageometry = new THREE.Geometry().fromBufferGeometry( cubeMesh.geometry );
-                                   var edgelist = getEdges(cubeMesh.geometry);//cubeMesh.geometry
-                                   //console.log("edgelist: "+edgelist.length);
-                                   for (var i = 0; i < cubeMesh.geometry.vertices.length; i++) {
-                                        eu = edgelist[i].filter(onlyUnique);
-                                        //console.log("edgelist: "+i+": "+eu);
-                                        for (var j = 0; j < eu.length; j++) {
-                                             //console.log("e: "+i+","+eu[j]);
-                                             var cyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                                             var cylinder = cylinderMesh(cubeGeo.vertices[i], cubeGeo.vertices[eu[j]], cyMaterial);
-                                             scene.add(cylinder);
-                                             objects.push(cylinder);
-                                             objects[cylinder.uuid] = cylinder;
-                                        }
-                                   }
-                                   console.log("objects size: " + objects.length);
-                                   console.log("edges: " + (objects.length - cubeMesh.geometry.vertices.length));
-                                   //add spheres to mesh, push to objects[], add to scene
-                                   //sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
-                              },
-                              // called when loading is in progresses
-                              function (xhr) {
-                                   console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-                              },
-                              // called when loading has errors
-                              function (error) {
-                                   console.log('An error happened');
-                              }
-                         );
+
+                         if (window.location.href.includes('?')) {
+                              var filenamex = window.location.href.split("?");
+                              window.location.href = filenamex[0] + "?" + filename;
+                              //if(filenamex.length == 1){filenamex[1]='face.obj';}
+                         } else {
+                              window.location.href = window.location.href + "?" + filename;
+                         }
 
                     });
                     document.getElementById('markerFileInput').addEventListener('change', importMarkerData);
@@ -185,6 +198,113 @@
 
                function onlyUnique(value, index, self) {
                     return self.indexOf(value) === index;
+               }
+
+               function getEdges(geometry) {
+                    var vertices = {};
+                    var faceIndices = ['a', 'b', 'c', 'd'];
+                    for (var i = 0; i < geometry.vertices.length; i++) {
+                         vertices[i] = [];
+                    }
+                    for (var i = 0; i < geometry.faces.length; i++) {
+                         face = geometry.faces[i];
+                         numberOfSides = (face instanceof THREE.Face3) ? 3 : 4;
+                         var faceVertices = [];
+                         for (var j = 0; j < numberOfSides; j++) {
+                              vertexIndex = face[faceIndices[j]];
+                              faceVertices.push(vertexIndex);
+                         }
+                         if (vertices[faceVertices[1]].indexOf(faceVertices[0]) == -1)
+                              vertices[faceVertices[0]].push(faceVertices[1]);
+                         if (vertices[faceVertices[2]].indexOf(faceVertices[0]) == -1)
+                              vertices[faceVertices[0]].push(faceVertices[2]);
+                         if (vertices[faceVertices[2]].indexOf(faceVertices[1]) == -1)
+                              vertices[faceVertices[1]].push(faceVertices[2]);
+                         /*    vertices.push([ Math.min(faceVertices[0], faceVertices[1]), Math.max(faceVertices[0], faceVertices[1]) ]);
+                             vertices.push([ Math.min(faceVertices[0], faceVertices[2]), Math.max(faceVertices[0], faceVertices[2]) ]);
+                             vertices.push([ Math.min(faceVertices[1], faceVertices[2]), Math.max(faceVertices[1], faceVertices[2]) ]);*/
+                         //console.log("faceVertices length: "+faceVertices.length);
+                    }
+                    return vertices;
+               }
+
+               function cylinderMesh(pointX, pointY, material) {
+                    var direction = new THREE.Vector3().subVectors(pointY, pointX);
+                    var orientation = new THREE.Matrix4();
+                    orientation.lookAt(pointX, pointY, new THREE.Object3D().up);
+                    orientation.multiply(new THREE.Matrix4().set(
+                         1, 0, 0, 0,
+                         0, 0, 1, 0,
+                         0, -1, 0, 0,
+                         0, 0, 0, 1));
+                    var edgeGeometry = new THREE.CylinderGeometry(0.01 / 4, 0.01 / 4, direction.length(), 8, 1);
+                    var edge = new THREE.Mesh(edgeGeometry, material);
+                    edge.applyMatrix(orientation);
+                    // position based on midpoints - there may be a better solution than this
+                    edge.position.x = (pointY.x + pointX.x) / 2;
+                    edge.position.y = (pointY.y + pointX.y) / 2;
+                    edge.position.z = (pointY.z + pointX.z) / 2;
+                    return edge;
+               }
+
+               /*Pushes the state, index, and color of a marked vertex into the
+               markerArray which will be exported to file.*/
+               function buildMarkerArray(state, objectIndex, color) {
+                    var tempMarkerArray = [];
+                    tempMarkerArray.push(state);
+                    tempMarkerArray.push(objectIndex);
+                    tempMarkerArray.push(color);
+                    markerArray.push(tempMarkerArray);
+               }
+
+               /*Deletes the array of marker data for an element of the specified index
+               in the markerArray.*/
+               function deleteFromMarkerArray(objectIndex) {
+                    var i;
+                    var tempArr = [];
+                    for (i = 0; i < markerArray.length; i++) {
+                         if (markerArray[i][1] == objectIndex) {
+                              tempArr.push(markerArray[i][0]);
+                              tempArr.push(markerArray[i][1]);
+                              tempArr.push(markerArray[i][2]);
+                              markerArray.splice(i, 1);
+                              delMarkerArr.push(tempArr);
+                         }
+                    }
+               }
+
+               /*Returns a formatted string detailing marker data, such as marker label,
+               index, and color*/
+               function buildMarkerDataString(listOfFeatures) {
+                    var i;
+                    var j;
+                    var stringData = "";
+                    var NUM_OF_COLS = 3;
+                    var NUM_OF_ROWS = listOfFeatures.length;
+                    stringData += "#MarkerStart\n";
+                    for (i = 0; i < NUM_OF_ROWS; i++) {
+                         for (j = 0; j < NUM_OF_COLS; j++) {
+                              //MarkerType
+                              if (j == 0) {
+                                   if (listOfFeatures[i][0] == 1)
+                                        stringData += "noseM ";
+                                   else if (listOfFeatures[i][0] == 2)
+                                        stringData += "l-eyebrowM ";
+                                   else if (listOfFeatures[i][0] == 3)
+                                        stringData += "r-eyebrowM ";
+                                   else if (listOfFeatures[i][0] == 4)
+                                        stringData += "l-eyeM ";
+                                   else if (listOfFeatures[i][0] == 5)
+                                        stringData += "r-eyeM ";
+                                   else if (listOfFeatures[i][0] == 6)
+                                        stringData += "l-earM ";
+                                   else if (listOfFeatures[i][0] == 7)
+                                        stringData += "r-earM ";
+                                   else if (listOfFeatures[i][0] == 8)
+                                        stringData += "chinM ";
+                              }
+                         }
+                    }
                }
 
                function getEdges(geometry) {
@@ -1061,6 +1181,7 @@
      <input style="display:none;" type="file" id="objBrowseInput" />
      <input style="display:none;" type="file" accept='.txt' id="markerFileInput" />
      <textarea id="markerText" hidden=true></textarea>
+
      <div class="leftPanel">
           <div id="log"></div>
      </div>
