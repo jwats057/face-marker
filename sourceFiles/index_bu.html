@@ -260,10 +260,14 @@ function buildStringByState (state, label, listOfFeatures, array){
     if (array.length == 0 && label != "#vertexPositions")
         return string = "";
     if (label == "#vertexPositions"){
-       var index = 0;
-       for (index = 0; index < listOfFeatures.length - 1; index ++){
-            if (listOfFeatures[index][1] <= numOfVertices)
-                 string += v + " " objects[index].vertices.x;
+        var index = 0;
+        for (index = 0; index < listOfFeatures.length - 1; index ++){
+            if (listOfFeatures[index][1] <= numOfVertices) {
+                 string += "v " + objects[listOfFeatures[index][1]].geometry.vertices[0].vertex.x;
+                 string += " " + objects[listOfFeatures[index][1]].geometry.vertices[1].vertex.y;
+                 string += " " + objects[listOfFeatures[index][1]].geometry.vertices[2].vertex.z +"\n";
+            }
+        }
     }
     while (listOfFeatures[i][0] == state){
          console.log("In state " + state + " index is " + i);
@@ -415,7 +419,9 @@ function exportMarkerData(){
 }
 /*Reset marker variables for when user wants to restart marking the data again.*/
 function resetStoredMarkerData(){
+     console.log(markerArray);
      markerArray = [];
+     console.log(markerArray);
      delMarkerArr = [];
      markerData = "";
      noseArray = [];
@@ -431,6 +437,7 @@ function resetStoredMarkerData(){
           objects[defColorArr[i][0]].material.color.setHex(defColorArr[i][1]);
      }
      defColorArr = [];
+     stateIndex = 0;
 }
 /*Needed to default marked elements to their original colors when
 pressing the 'Reset All' button in the GUI*/
