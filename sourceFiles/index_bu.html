@@ -48,6 +48,9 @@ var markerData = "";
 var mouse3D;
 //Integer var that keeps track of marker kind.
 var state;
+var stateIndex = 0;
+var numOfVertices;
+
 //var lastState;
 window.onload=function(){
 var renderer, camera, control, sphereGeo;
@@ -127,6 +130,7 @@ function init() {
                //var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0x0000ff, wireframe: false} );
                var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
                console.log("verts: " + cubeMesh.geometry.vertices.length);
+               numOfVertices = cubeMesh.geometry.vertices.length;
                var eGeometry = new THREE.EdgesGeometry( cubeMesh.geometry );
                var eMaterial = new THREE.LineBasicMaterial( { color: 0x00ff00, linewidth: 1 } );
                var edges = new THREE.LineSegments( eGeometry, eMaterial );
@@ -248,6 +252,51 @@ function deleteFromMarkerArray(objectIndex) {
           }
      }
 }
+
+/*Builds the marker string for a specific state.*/
+function buildStringByState (state, label, listOfFeatures, array){
+    var string = label + "\n";
+    var i = stateIndex;
+    if (array.length == 0 && label != "#vertexPositions")
+        return string = "";
+    if (label == "#vertexPositions"){
+       var index = 0;
+       for (index = 0; index < listOfFeatures.length - 1; index ++){
+            if (listOfFeatures[index][1] <= numOfVertices)
+                 string += v + " " objects[index].vertices.x;
+    }
+    while (listOfFeatures[i][0] == state){
+         console.log("In state " + state + " index is " + i);
+         //Index
+         string +=  listOfFeatures[i][1] + " ";
+         //Color
+         string += listOfFeatures[i][2] + "\n";
+         if (i == listOfFeatures.length - 1)
+           break;
+         i++;
+    }
+    stateIndex = i;
+    return string;
+}
+
+/*Returns a formatted string detailing marker data, such as marker label,
+index, and colo (second version)r*/
+function buildMarkerDataString2(listOfFeatures) {
+     var stringData = "";
+     stringData += "#MarkerStart\n";
+     stringData +=buildStringByState (1, "#noseM", listOfFeatures, noseArray);
+     stringData +=buildStringByState (2, "#l-eyebrowM", listOfFeatures, leyebrowArray);
+     stringData +=buildStringByState (3, "#r-eyebrowM", listOfFeatures, reyebrowArray);
+     stringData +=buildStringByState (4, "#l-eyeM", listOfFeatures, leyeArray);
+     stringData +=buildStringByState (5, "#r-eyeM", listOfFeatures, reyeArray);
+     stringData +=buildStringByState (6, "#l-earM", listOfFeatures, learArray);
+     stringData += buildStringByState (7, "#r-earM", listOfFeatures, rearArray);
+     stringData +=buildStringByState (8, "#chinM", listOfFeatures, chinArray);
+     stringData +=buildStringByState (0, "#vertexPositions", listOfFeatures, []);
+     stringData += "#MarkerEnd\n";
+     return stringData;
+}
+
 /*Returns a formatted string detailing marker data, such as marker label,
 index, and color*/
 function buildMarkerDataString(listOfFeatures) {
@@ -263,7 +312,7 @@ function buildMarkerDataString(listOfFeatures) {
                if (j == 0) {
                     if (listOfFeatures.length > 1) {
                          lastState = listOfFeatures[i][0];
-                         console.log();
+                         console.log(lastState);
                     }
                     if (listOfFeatures[i][0] == 1)
                          stringData += "noseM ";
@@ -294,6 +343,16 @@ function buildMarkerDataString(listOfFeatures) {
      stringData += "#MarkerEnd\n";
      return stringData;
 }
+
+/*Auxilary sorter that is passed to JS sort() in the "Export Marker" function to sort by column in a
+multidimensional array*/
+function sortByState(firstVal, secondVal) {
+     if (firstVal[0] === secondVal[0])
+          return 0;
+     else
+          return (firstVal[0] < secondVal[0]) ? -1 : 1;
+}
+
 /*Undos the most recent deletion of a marker by popping the most recent
 marker data from delMarkerArr, pushing the array to markerArray,
 pushing it back to the appropriate marker array, and reapplying the color.*/
@@ -382,8 +441,8 @@ function getDefaultColor(objectIndex, color) {
      defColorArr.push(tempColorArr);
 }
 			   /* explicitly color each object (vertex/edge) - (there may be a better way to do this) */
-				function updateColor(arr, obj, color){
-					for(var i = 0; i < obj.length; i++){
+function updateColor(arr, obj, color){
+     for(var i = 0; i < obj.length; i++){
 						for(var j = 0; j < arr.length; j++){
 							if(arr[j] == i){
 								obj[i].material.color.setHex(color);
@@ -684,6 +743,7 @@ function onDocumentMouseDown( event ) {
                 //intersects[ 0 ].object.material.color.setHex( Math.random() * 0xffffff );
      }
 }
+
 //Create gui and handle gui events
 function displayGUI(){
      var gui = new dat.GUI();
@@ -735,15 +795,14 @@ function displayGUI(){
           this.Rear = str;
           this.Chin = str;
           this.Save = function () {
-               function sortByState(firstVal, secondVal) {
-                    if (firstVal[0] === secondVal[0])
-                         return 0;
-                    else
-                         return (firstVal[0] < secondVal[0]) ? -1 : 1;
+               if (markerArray.length == 0) {
+                    alert("There are currently no markers to save.");
                }
-               markerArray.sort(sortByState);
-               markerData = buildMarkerDataString(markerArray);
-               exportMarkerData();
+               else {
+                    markerArray.sort(sortByState);
+                    markerData = buildMarkerDataString2(markerArray);
+                    exportMarkerData();
+               }
           };
           this.Load = function () {
                document.getElementById('markerFileInput').click();
