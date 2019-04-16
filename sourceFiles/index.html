@@ -110,12 +110,21 @@ function init() {
 	     'obj/'+filename,
 	     // called when resource is loaded
 	     function ( obje ) {
-	          var material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: false} );
+			
+			var texture = new THREE.TextureLoader().load( 'land_ocean_ice_cloud_2048.jpg' ); //
+
+			// immediately use the texture for material creation
+			var material = new THREE.MeshBasicMaterial( { map: texture } ); //
+			
+	        //  var material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: false} ); //
                obje.traverse( function ( child ) {
       			if ( child.isMesh ){
 					child.material = material;
 	      	     }
 		     } );
+			 
+			 
+			 
               //scene.add( obje );
 	          var bb = new THREE.Box3()
                bb.setFromObject(obje);
@@ -191,6 +200,7 @@ function getEdges(geometry) {
      }
      for(var i =0;i<geometry.faces.length;i++) {
           face = geometry.faces[ i ];
+		  console.log("faces: " + geometry.faces.length);
           numberOfSides = ( face instanceof THREE.Face3 ) ? 3 : 4;
           var faceVertices = [];
           for( var j=0;j<numberOfSides; j++) {
