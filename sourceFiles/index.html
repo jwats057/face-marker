@@ -6,7 +6,6 @@
      <meta name="robots" content="noindex, nofollow">
      <meta name="googlebot" content="noindex, nofollow">
      <!--TODO DELETE Not in use <link rel="stylesheet" type="text/css" href="/css/result-light.css">-->
-
      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/102/three.min.js"></script>
      <script type="text/javascript"
@@ -89,45 +88,29 @@
                     var light = new THREE.PointLight(0xffffff, 1, 20);
                     light.position.set(0, 0, 2);
                     scene.add(light);
-                 
                     //console.log("objects size: "+ objects.length);
                     //showLog();
                     displayGUI(); //function call for gui
                     //showCoords(event);
                     //document.addEventListener("click", showCoords);
-selectElement = document.querySelector('#objBrowseInput');
-		    selectElement.addEventListener('change', (event) => {
-				//const result = document.querySelector('.result');
-				//result.textContent = `You like ${event.target.value}`;
-			//alert(document.getElementById("objBrowseInput").files[0].path);
-			var fullPath = document.getElementById('objBrowseInput').value;
-		    var filename;
-			if (fullPath) {
-				var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
-				filename = fullPath.substring(startIndex);
-				if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
-					filename = filename.substring(1);
-				}
-				//alert(fullPath);
-			}
-
-		  
-		    if(window.location.href.includes('?')){
-				var filenamex = window.location.href.split("?");
-				window.location.href = filenamex[0] + "?" + filename;
-				//if(filenamex.length == 1){filenamex[1]='face.obj';}
-			} else{
-				window.location.href = window.location.href + "?" + filename;
-			}
-
-		});
-                      //alert(window.location.href);
-	 var filenamex = window.location.href.split("?");
-	 if(filenamex.length == 1){filenamex[1]='face.obj';}
+                    selectElement = document.querySelector('#objBrowseInput');
+                    selectElement.addEventListener('change', (event) => {
+                         //const result = document.querySelector('.result');
+                         //result.textContent = `You like ${event.target.value}`;
+                         var fullPath = document.getElementById('objBrowseInput').value;
+                         var filename;
+                         if (fullPath) {
+                              var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
+                              filename = fullPath.substring(startIndex);
+                              if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
+                                   filename = filename.substring(1);
+                              }
+                              //alert(filename);
+                         }
                          //return filename;
                          loader.load(
                               // resource URL
-                              'obj/'+filenamex[1],
+                              'obj/' + filename,
                               // called when resource is loaded
                               function (obje) {
                                    var material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: false });
@@ -1067,7 +1050,6 @@ selectElement = document.querySelector('#objBrowseInput');
                background-attachment: fixed;
           }
 
-
           #cmds {
                position: absolute;
                top: 0px;
@@ -1087,7 +1069,6 @@ selectElement = document.querySelector('#objBrowseInput');
                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
           }
 
-
           #printinfo {
                position: absolute;
                top: 120px;
@@ -1102,7 +1083,6 @@ selectElement = document.querySelector('#objBrowseInput');
                border-radius: 3px;
                color: #ffffff;
                background-color: #515a5a;
-
                padding: 7px 7px 7px 7px;
                font-family: arial;
                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
@@ -1114,13 +1094,11 @@ selectElement = document.querySelector('#objBrowseInput');
                left: 10px;
                text-align: left;
                z-index: 100;
-
                display: block;
                border: 1px solid black;
                border-radius: 3px;
                color: #ffffff;
                background-color: #515a5a;
-
                padding: 7px 7px 7px 7px;
                font-family: arial;
                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
@@ -1137,15 +1115,14 @@ selectElement = document.querySelector('#objBrowseInput');
                color: yellow;
                position: absolute;
                right: 10px;
-
           }
      </style>
 </head>
+
 <body>
      <div id="info">Null State</div>
      <div id="printinfo">Print</div>
      <div id="cmds">Commands</div>
-
      <input style="display:none;" type="file" id="objBrowseInput" />
      <input style="display:none;" type="file" accept='text/plain' id="markerFileInput" />
      <textarea id="markerText" hidden=true></textarea>
@@ -1155,7 +1132,6 @@ selectElement = document.querySelector('#objBrowseInput');
 
 
      <!--
-
   <style type="text/css">
   #info {
   	position: absolute;
@@ -1205,7 +1181,6 @@ selectElement = document.querySelector('#objBrowseInput');
      <div class="rightPanel">
           <div id="logLive"></div>
           <!--<ol>
-
 	</ol>-->
           <!--<select id="labelName">
 		<option>hair line</option>
@@ -1224,6 +1199,4 @@ selectElement = document.querySelector('#objBrowseInput');
      </div>
 </body>
 
-
 </html>
-
