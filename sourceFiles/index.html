@@ -57,6 +57,7 @@
                var divElem, divObj;
                var i = 1;
                var loader;
+               var cubeMaterial = new THREE.MeshBasicMaterial({ color: 0xD3D3D3, wireframe: false });
                //php -S localhost:8080
 
                init();
@@ -86,74 +87,6 @@
                     var light = new THREE.PointLight(0xffffff, 1, 20);
                     light.position.set(0, 0, 2);
                     scene.add(light);
-
-                    //alert(window.location.href);
-                    var filenamex = window.location.href.split("?");
-                    if (filenamex.length == 1) { filenamex[1] = 'face.obj'; }
-                    loader.load(
-                         // resource URL
-                         'obj/' + filenamex[1],
-                         // called when resource is loaded
-                         function (obje) {
-                              var material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
-                              obje.traverse(function (child) {
-                                   if (child.isMesh) {
-                                        child.material = material;
-                                   }
-                              });
-                              //scene.add( obje );
-                              var bb = new THREE.Box3()
-                              bb.setFromObject(obje);
-                              bb.getCenter(control.target);
-                              var cubeGeo = new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
-                              cubeGeo.mergeVertices();  //removes duplicate vertices
-                              //cubeGeo.center();
-                              //var cubeGeo =  obje.children[0].geometry;//new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
-                              /*Start of Spheres*/
-                              //cubeGeo = new THREE.SphereGeometry(1,7,7);
-                              sphereGeo = cubeGeo;
-                              var cubeMaterial = new THREE.MeshBasicMaterial();
-                              var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
-                              console.log("verts: " + cubeMesh.geometry.vertices.length);
-                              var eGeometry = new THREE.EdgesGeometry(cubeMesh.geometry);
-                              var eMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 1 });
-                              var edges = new THREE.LineSegments(eGeometry, eMaterial);
-                              //cubeMesh.add( edges );
-                              //scene.add(cubeMesh);
-                              //add spheres to mesh, push to objects[], add to scene
-                              sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
-                              console.log("objects size: " + objects.length);
-                              //console.log( "Geometry: "+cubeMesh.geometry.isGeometry );
-                              //var ageometry = new THREE.Geometry().fromBufferGeometry( cubeMesh.geometry );
-                              var edgelist = getEdges(cubeMesh.geometry);//cubeMesh.geometry
-                              //console.log("edgelist: "+edgelist.length);
-                              for (var i = 0; i < cubeMesh.geometry.vertices.length; i++) {
-                                   eu = edgelist[i].filter(onlyUnique);
-                                   //console.log("edgelist: "+i+": "+eu);
-                                   for (var j = 0; j < eu.length; j++) {
-                                        //console.log("e: "+i+","+eu[j]);
-                                        var cyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                                        var cylinder = cylinderMesh(cubeGeo.vertices[i], cubeGeo.vertices[eu[j]], cyMaterial);
-                                        scene.add(cylinder);
-                                        objects.push(cylinder);
-                                        objects[cylinder.uuid] = cylinder;
-                                   }
-                              }
-                              console.log("objects size: " + objects.length);
-                              console.log("edges: " + (objects.length - cubeMesh.geometry.vertices.length));
-                              //add spheres to mesh, push to objects[], add to scene
-                              //sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
-                         },
-                         // called when loading is in progresses
-                         function (xhr) {
-                              console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-                         },
-                         // called when loading has errors
-                         function (error) {
-                              console.log('An error happened');
-                         }
-                    );
-
                     //console.log("objects size: "+ objects.length);
                     //showLog();
                     displayGUI(); //function call for gui
@@ -163,7 +96,6 @@
                     selectElement.addEventListener('change', (event) => {
                          //const result = document.querySelector('.result');
                          //result.textContent = `You like ${event.target.value}`;
-                         //alert(document.getElementById("objBrowseInput").files[0].path);
                          var fullPath = document.getElementById('objBrowseInput').value;
                          var filename;
                          if (fullPath) {
@@ -172,17 +104,73 @@
                               if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
                                    filename = filename.substring(1);
                               }
-                              //alert(fullPath);
+                              //alert(filename);
                          }
 
-
-                         if (window.location.href.includes('?')) {
-                              var filenamex = window.location.href.split("?");
-                              window.location.href = filenamex[0] + "?" + filename;
-                              //if(filenamex.length == 1){filenamex[1]='face.obj';}
-                         } else {
-                              window.location.href = window.location.href + "?" + filename;
-                         }
+                         //return filename;
+                         loader.load(
+                              // resource URL
+                              'obj/' + filename,
+                              // called when resource is loaded
+                              function (obje) {
+                                   var material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: false });
+                                   obje.traverse(function (child) {
+                                        if (child.isMesh) {
+                                             child.material = material;
+                                        }
+                                   });
+                                   //scene.add( obje );
+                                   var bb = new THREE.Box3()
+                                   bb.setFromObject(obje);
+                                   bb.getCenter(control.target);
+                                   var cubeGeo = new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
+                                   cubeGeo.mergeVertices();  //removes duplicate vertices
+                                   //cubeGeo.center();
+                                   //var cubeGeo =  obje.children[0].geometry;//new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
+                                   /*Start of Spheres*/
+                                   //cubeGeo = new THREE.SphereGeometry(1,7,7);
+                                   sphereGeo = cubeGeo;
+                                   //var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0x0000ff, wireframe: false} );
+                                   var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
+                                   console.log("verts: " + cubeMesh.geometry.vertices.length);
+                                   var eGeometry = new THREE.EdgesGeometry(cubeMesh.geometry);
+                                   var eMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 1 });
+                                   var edges = new THREE.LineSegments(eGeometry, eMaterial);
+                                   //cubeMesh.add( edges );
+                                   scene.add(cubeMesh);
+                                   //add spheres to mesh, push to objects[], add to scene
+                                   sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
+                                   console.log("objects size: " + objects.length);
+                                   //console.log( "Geometry: "+cubeMesh.geometry.isGeometry );
+                                   //var ageometry = new THREE.Geometry().fromBufferGeometry( cubeMesh.geometry );
+                                   var edgelist = getEdges(cubeMesh.geometry);//cubeMesh.geometry
+                                   //console.log("edgelist: "+edgelist.length);
+                                   for (var i = 0; i < cubeMesh.geometry.vertices.length; i++) {
+                                        eu = edgelist[i].filter(onlyUnique);
+                                        //console.log("edgelist: "+i+": "+eu);
+                                        for (var j = 0; j < eu.length; j++) {
+                                             //console.log("e: "+i+","+eu[j]);
+                                             var cyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                                             var cylinder = cylinderMesh(cubeGeo.vertices[i], cubeGeo.vertices[eu[j]], cyMaterial);
+                                             scene.add(cylinder);
+                                             objects.push(cylinder);
+                                             objects[cylinder.uuid] = cylinder;
+                                        }
+                                   }
+                                   console.log("objects size: " + objects.length);
+                                   console.log("edges: " + (objects.length - cubeMesh.geometry.vertices.length));
+                                   //add spheres to mesh, push to objects[], add to scene
+                                   //sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
+                              },
+                              // called when loading is in progresses
+                              function (xhr) {
+                                   console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                              },
+                              // called when loading has errors
+                              function (error) {
+                                   console.log('An error happened');
+                              }
+                         );
 
                     });
                     document.getElementById('markerFileInput').addEventListener('change', importMarkerData);
@@ -194,10 +182,6 @@
                          renderer.setSize(window.innerWidth, window.innerHeight);
                          control.update();
                     }
-               }
-
-               function onlyUnique(value, index, self) {
-                    return self.indexOf(value) === index;
                }
 
                function getEdges(geometry) {
@@ -415,7 +399,7 @@
                                    stringData += listOfFeatures[i][1] + " ";
                               //Color
                               else if (j == 2)
-                                   stringData += listOfFeatures[i][2];
+                                   stringData += listOfFeatures[i][2] + " "
                          }
                          stringData += "\n";
                     }
@@ -486,7 +470,45 @@
                     saveAs(blob, "MarkerFile");
                }
 
+               /*Reset marker variables for when user wants to restart marking the data again.*/
+               function resetStoredMarkerData() {
+                    markerArray = [];
+                    delMarkerArr = [];
+                    markerData = "";
+                    noseArray = [];
+                    leyebrowArray = [];
+                    reyebrowArray = [];
+                    leyeArray = [];
+                    reyeArray = [];
+                    learArray = [];
+                    rearArray = [];
+                    chinArray = [];
+                    var i;
+                    for (i = 0; i < defColorArr.length; i++) {
+                         objects[defColorArr[i][0]].material.color.setHex(defColorArr[i][1]);
+                    }
+                    defColorArr = [];
+               }
 
+               /*Needed to default marked elements to their original colors when
+               pressing the 'Reset All' button in the GUI*/
+               function getDefaultColor(objectIndex, color) {
+                    var tempColorArr = [];
+                    tempColorArr.push(objectIndex);
+                    tempColorArr.push(color);
+                    defColorArr.push(tempColorArr);
+               }
+
+               /* explicitly color each object (vertex/edge) - (there may be a better way to do this) */
+               function updateColor(arr, obj, color) {
+                    for (var i = 0; i < obj.length; i++) {
+                         for (var j = 0; j < arr.length; j++) {
+                              if (arr[j] == i) {
+                                   obj[i].material.color.setHex(color);
+                              }
+                         }
+                    }
+               }
 
                /*** Marker file loader ***/
 
@@ -504,7 +526,7 @@
                          // Loading into array
                          console.log("LOADING INTO ARRAYS");
                          for (var i = 0; i < vertices.length; i++) {
-                              objects[i].material.color.setHex("0x" + vertices[i][2]);
+                              //objects[i].material.color.setHex("0x" + vertices[i][2]); //color data not required as per our professor
 
                               console.log("adding " + vertices[i][0] + " " + vertices[i][1] + " " + objects[i].material.color.getHexString());
                               switch (vertices[i][0]) {
@@ -535,6 +557,15 @@
                               }
                               buildMarkerArray(vertices[i][0], vertices[i][1], objects[i].material.color.getHexString());
                          }
+
+                         updateColor(noseArray, objects, 0xff0000); //call updateColor to red for nose
+                         updateColor(leyebrowArray, objects, 0xff4000);
+                         updateColor(reyebrowArray, objects, 0xff8000);
+                         updateColor(leyeArray, objects, 0x0040ff);
+                         updateColor(reyeArray, objects, 0x0080ff);
+                         updateColor(learArray, objects, 0xbf00ff);
+                         updateColor(rearArray, objects, 0xff00ff);
+                         updateColor(chinArray, objects, 0x00ff00);
 
                     };
                     reader.readAsText(input.files[0]);
@@ -601,41 +632,6 @@
                     console.log(output);
                     */
                     return vertices2;
-               }
-
-
-
-
-
-
-
-               /*Reset marker variables for when user wants to restart marking the data again.*/
-               function resetStoredMarkerData() {
-                    markerArray = [];
-                    delMarkerArr = [];
-                    markerData = "";
-                    noseArray = [];
-                    leyebrowArray = [];
-                    reyebrowArray = [];
-                    leyeArray = [];
-                    reyeArray = [];
-                    learArray = [];
-                    rearArray = [];
-                    chinArray = [];
-                    var i;
-                    for (i = 0; i < defColorArr.length; i++) {
-                         objects[defColorArr[i][0]].material.color.setHex(defColorArr[i][1]);
-                    }
-                    defColorArr = [];
-               }
-
-               /*Needed to default marked elements to their original colors when
-               pressing the 'Reset All' button in the GUI*/
-               function getDefaultColor(objectIndex, color) {
-                    var tempColorArr = [];
-                    tempColorArr.push(objectIndex);
-                    tempColorArr.push(color);
-                    defColorArr.push(tempColorArr);
                }
 
                //raycast on mouse down
@@ -878,9 +874,7 @@
                               exportMarkerData();
                          };
                          this.Load = function () {
-                              console.log("Import Markers clicked");
                               document.getElementById('markerFileInput').click();
-
                          };
                          this.Undo = function () {
                               undoPreviousDeletion();
@@ -902,6 +896,7 @@
                          };
                          this.Print = false;
                          this.Cmds = false;
+                         this.Wireframe = false;
                          this.ObjBrowse = function () {
                               document.getElementById("objBrowseInput").click();
                          };
@@ -971,6 +966,9 @@
                     }).listen();
                     methods.add(controller, 'Cmds', false).name('Show Commands').onChange(function () {
                          showCmds(controller.Cmds);
+                    });
+                    methods.add(controller, 'Wireframe', false).onChange(function () {
+                         cubeMaterial.wireframe = controller.Wireframe;
                     });
 
                     methods.add(controller, 'ObjBrowse').name('Load Obj');
@@ -1166,28 +1164,24 @@
                overflow-y: hidden;
           }
 
-          .rightPanel {
+          <<<<<<< HEAD .rightPanel {
                color: yellow;
-               position: absolute;
-               right: 10px;
+               >>>>>>>Nicolas
           }
      </style>
 </head>
-
-<body>
-     <div id="info">Null State</div>
-     <div id="printinfo">Print</div>
-     <div id="cmds">Commands</div>
-     <input style="display:none;" type="file" id="objBrowseInput" />
-     <input style="display:none;" type="file" accept='.txt' id="markerFileInput" />
-     <textarea id="markerText" hidden=true></textarea>
-
-     <div class="leftPanel">
-          <div id="log"></div>
-     </div>
+<div id="info">Null State</div>
+<div id="printinfo">Print</div>
+<div id="cmds">Commands</div>
+<input style="display:none;" type="file" id="objBrowseInput" />
+<input style="display:none;" type="file" accept='text/plain' id="markerFileInput" />
+<textarea id="markerText" hidden=true></textarea>
+<div class="leftPanel">
+     <div id="log"></div>
+</div>
 
 
-     <!--
+<!--
   <style type="text/css">
   #info {
   	position: absolute;
@@ -1238,11 +1232,11 @@
   </style>-->
 
 
-     <div class="rightPanel">
-          <div id="logLive"></div>
-          <!--<ol>
+<div class="rightPanel">
+     <div id="logLive"></div>
+     <!--<ol>
 	</ol>-->
-          <!--<select id="labelName">
+     <!--<select id="labelName">
 		<option>hair line</option>
 		<option>left eye brow</option>
 		<option>right eye brow</option>
@@ -1256,7 +1250,7 @@
 	</select>
 	<button id="btn2">Create Label</button>-->
 
-     </div>
+</div>
 </body>
 
 </html>
