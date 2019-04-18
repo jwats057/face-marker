@@ -265,7 +265,7 @@
                     if (label == "#vertexPosStart") {
                          var index = 0;
                          var markerIndex;
-                         for (index = 0; index < listOfFeatures.length - 1; index++) {
+                         for (index = 0; index < listOfFeatures.length; index++) {
                               if (listOfFeatures[index][1] <= numOfVertices) {
                                    markerIndex = listOfFeatures[index][1];
                                    var vertX = objects[markerIndex].geometry.vertices[0].x
