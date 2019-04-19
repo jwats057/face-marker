@@ -1,169 +1,107 @@
-
 <!DOCTYPE html>
 <html>
+
 <head>
      <meta http-equiv="content-type" content="text/html; charset=UTF-8">
      <meta name="robots" content="noindex, nofollow">
      <meta name="googlebot" content="noindex, nofollow">
      <!--TODO DELETE Not in use <link rel="stylesheet" type="text/css" href="/css/result-light.css">-->
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/102/three.min.js"></script>
-     <script type="text/javascript" src="https://rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
-	<!--TODO DELETE Not in use<script type="text/javascript" src="js/OBJLoader.js"></script-->
-	<script type="text/javascript" src="https://rawgit.com/mrdoob/three.js/master/examples/js/loaders/OBJLoader.js"></script>
+     <script type="text/javascript"
+          src="https://rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
+     <!--TODO DELETE Not in use<script type="text/javascript" src="js/OBJLoader.js"></script-->
+     <script type="text/javascript"
+          src="https://rawgit.com/mrdoob/three.js/master/examples/js/loaders/OBJLoader.js"></script>
      <script src="http://mrdoob.github.io/stats.js/build/stats.min.js"></script>
      <script src="https://rawgit.com/eligrey/FileSaver.js/master/src/FileSaver.js"></script>
      <script src="js/custom/sphereMesh.js"></script>
-     <script src = "js/dat.gui.min.js"></script>
+     <script src="js/dat.gui.min.js"></script>
 
      <title>Face Marker - GEOM SE</title>
 
-<!--JS not indented inside just incase we choose to copy and paste to seperate file-->
+     <!--JS not indented inside just incase we choose to copy and paste to seperate file-->
 
-<script type='text/javascript'>
-var stats = new Stats();
-stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
-/*Main Variables*/
-//Main viewing scene that obj loads to
-var scene;
-//Array of face Vertices and Edges
-var objects = [];
-//Arrays of each corresponding marker data.
-var noseArray = [];
-var leyebrowArray = [];
-var reyebrowArray = [];
-var leyeArray = [];
-var reyeArray = [];
-var learArray = [];
-var rearArray = [];
-var chinArray = [];
-//Array that keeps track of marked vertices and edges
-var markerArray = [];
-//Array that keeps track of deleted markers for undo later.
-var delMarkerArr = [];
-//Used to reset colors of objects to loaded default
-var defColorArr = [];
-//Formatted String that contains marker data
-var markerData = "";
-//Used for raycaster
-var mouse3D;
-//Integer var that keeps track of marker kind.
-var state;
+     <script type='text/javascript'>
+          var stats = new Stats();
+          stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+          /*Main Variables*/
+          //Main viewing scene that obj loads to
+          var scene;
+          //Array of face Vertices and Edges
+          var objects = [];
+          //Arrays of each corresponding marker data.
+          var noseArray = [];
+          var leyebrowArray = [];
+          var reyebrowArray = [];
+          var leyeArray = [];
+          var reyeArray = [];
+          var learArray = [];
+          var rearArray = [];
+          var chinArray = [];
+          //Array that keeps track of marked vertices and edges
+          var markerArray = [];
+          //Array that keeps track of deleted markers for undo later.
+          var delMarkerArr = [];
+          //Used to reset colors of objects to loaded default
+          var defColorArr = [];
+          //Formatted String that contains marker data
+          var markerData = "";
+          //Used for raycaster
+          var mouse3D;
+          //Integer var that keeps track of marker kind.
+          var state;
+          var stateIndex = 0;
+          var numOfVertices;
 
-window.onload=function(){
-var renderer, camera, control, sphereGeo;
-var divElem, divObj;
-var i = 1;
-var loader;
-//php -S localhost:8080
+          //var lastState;
+          window.onload = function () {
+               var renderer, camera, control, sphereGeo;
+               var divElem, divObj;
+               var i = 1;
+               var loader;
+               var cubeMaterial = new THREE.MeshBasicMaterial({ color: 0xD3D3D3, wireframe: false });
+               //php -S localhost:8080
+               init();
+               animate();
+               function init() {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x3a3a3a);
+                    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+                    camera.position.z = 1;
+                    mouse3D = new THREE.Vector2();
+                    raycaster = new THREE.Raycaster();
+                    renderer = new THREE.WebGLRenderer();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.body.appendChild(renderer.domElement);
+                    control = new THREE.OrbitControls(camera, renderer.domElement);
+                    control.addEventListener('change', function () {
+                         onCameraChange();
+                    });
+                    var size = 10;
+                    var divisions = 10;
+                    //var gridHelper = new THREE.GridHelper( size, divisions );
+                    //scene.add( gridHelper );
+                    // instantiate a loader
+                    loader = new THREE.OBJLoader();
+                    // load a resource
+                    var light = new THREE.PointLight(0xffffff, 1, 20);
+                    light.position.set(0, 0, 2);
+                    scene.add(light);
 
-init();
-animate();
-
-function init() {
-     scene = new THREE.Scene();
-	scene.background = new THREE.Color( 0x3a3a3a );
-     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
-     camera.position.z = 1;
-	mouse3D = new THREE.Vector2();
-	raycaster =  new THREE.Raycaster();
-     renderer = new THREE.WebGLRenderer();
-     renderer.setSize(window.innerWidth, window.innerHeight);
-     document.body.appendChild(renderer.domElement);
-     control = new THREE.OrbitControls(camera, renderer.domElement);
-     control.addEventListener('change', function() {
-          onCameraChange();
-     });
-     var size = 10;
-     var divisions = 10;
-     //var gridHelper = new THREE.GridHelper( size, divisions );
-     //scene.add( gridHelper );
-	// instantiate a loader
-     loader = new THREE.OBJLoader();
-     // load a resource
-     var light = new THREE.PointLight( 0xffffff, 1, 20 );
-     light.position.set( 0, 0, 2 );
-     scene.add(light);
-
-	 //alert(window.location.href);
-	 var filenamex = window.location.href.split("?");
-	 if(filenamex.length == 1){filenamex[1]='face.obj';}
-     loader.load(
-	     // resource URL
-	     'obj/'+filenamex[1],
-	     // called when resource is loaded
-	     function ( obje ) {
-	          var material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} );
-               obje.traverse( function ( child ) {
-      			if ( child.isMesh ){
-					child.material = material;
-	      	     }
-		     } );
-               //scene.add( obje );
-	          var bb = new THREE.Box3()
-               bb.setFromObject(obje);
-               bb.getCenter(control.target);
-	          var cubeGeo = new THREE.Geometry().fromBufferGeometry( obje.children[0].geometry );
-               cubeGeo.mergeVertices();  //removes duplicate vertices
-               //cubeGeo.center();
-	          //var cubeGeo =  obje.children[0].geometry;//new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
-               /*Start of Spheres*/
-               //cubeGeo = new THREE.SphereGeometry(1,7,7);
-               sphereGeo = cubeGeo;
-               var cubeMaterial = new THREE.MeshBasicMaterial(  );
-               var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
-               console.log("verts: " + cubeMesh.geometry.vertices.length);
-               var eGeometry = new THREE.EdgesGeometry( cubeMesh.geometry );
-               var eMaterial = new THREE.LineBasicMaterial( { color: 0x00ff00, linewidth: 1 } );
-               var edges = new THREE.LineSegments( eGeometry, eMaterial );
-               //cubeMesh.add( edges );
-               //scene.add(cubeMesh);
-               //add spheres to mesh, push to objects[], add to scene
-               sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
-               console.log("objects size: "+ objects.length);
-               //console.log( "Geometry: "+cubeMesh.geometry.isGeometry );
-	          //var ageometry = new THREE.Geometry().fromBufferGeometry( cubeMesh.geometry );
-               var edgelist = getEdges(cubeMesh.geometry);//cubeMesh.geometry
-               //console.log("edgelist: "+edgelist.length);
-               for(var i=0; i<cubeMesh.geometry.vertices.length; i++) {
-                    eu = edgelist[i].filter(onlyUnique);
-                    //console.log("edgelist: "+i+": "+eu);
-                    for(var j=0; j<eu.length; j++) {
-                         //console.log("e: "+i+","+eu[j]);
-                         var cyMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
-                         var cylinder = cylinderMesh(cubeGeo.vertices[i], cubeGeo.vertices[eu[j]], cyMaterial);
-                         scene.add(cylinder);
-                         objects.push(cylinder);
-                         objects[cylinder.uuid] = cylinder;
-                    }
-               }
-               console.log("objects size: "+ objects.length);
-               console.log("edges: " + (objects.length - cubeMesh.geometry.vertices.length));
-               //add spheres to mesh, push to objects[], add to scene
-               //sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
-	     },
-	     // called when loading is in progresses
-	     function ( xhr ) {
-		     console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-          },
-	     // called when loading has errors
-	     function ( error ) {
-		     console.log( 'An error happened' );
-	     }
-     );
-
-     //console.log("objects size: "+ objects.length);
-     //showLog();
-     displayGUI(); //function call for gui
-     //showCoords(event);
-     //document.addEventListener("click", showCoords);
-	 		  selectElement = document.querySelector('#objBrowseInput');
-		    selectElement.addEventListener('change', (event) => {
+                    //console.log("objects size: "+ objects.length);
+                    //showLog();
+                    displayGUI(); //function call for gui
+                    //showCoords(event);
+                    //document.addEventListener("click", showCoords);
+		selectElement = document.querySelector('#objBrowseInput');
+		selectElement.addEventListener('change', (event) => {
 				//const result = document.querySelector('.result');
 				//result.textContent = `You like ${event.target.value}`;
 			//alert(document.getElementById("objBrowseInput").files[0].path);
-			var fullPath = document.getElementById('objBrowseInput').value;
-		    var filename;
+			var fullPath = event.target.files[0];//document.getElementById('objBrowseInput').value;
+		    var filename = fullPath;/*
 			if (fullPath) {
 				var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
 				filename = fullPath.substring(startIndex);
@@ -171,703 +109,1065 @@ function init() {
 					filename = filename.substring(1);
 				}
 				//alert(fullPath);
-			}
+			}*/
+			var file    = selectElement.files[0];
+			var reader  = new FileReader();
 
-		  
+
+			//alert(fullPath);
+
 		    if(window.location.href.includes('?')){
 				var filenamex = window.location.href.split("?");
 				window.location.href = filenamex[0] + "?" + filename;
 				//if(filenamex.length == 1){filenamex[1]='face.obj';}
 			} else{
-				window.location.href = window.location.href + "?" + filename;
+				//window.location.href = window.location.href + "?" + filename;
 			}
 
+			/*Garbage Collection*/
+			delete objects;
+			objects = [];
+			while(scene.children.length > 0){
+				scene.remove(scene.children[0]);
+			}
+			/*End of garbage collection*/
+		reader.addEventListener("load", function () {
+			loader.load(
+                              // resource URL
+                              reader.result,
+                              // called when resource is loaded
+                              function (obje) {
+                                   var material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: false });
+                                   obje.traverse(function (child) {
+                                        if (child.isMesh) {
+                                             child.material = material;
+                                        }
+                                   });
+                                   //scene.add( obje );
+                                   var bb = new THREE.Box3()
+                                   bb.setFromObject(obje);
+                                   bb.getCenter(control.target);
+                                   var cubeGeo = new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
+                                   cubeGeo.mergeVertices();  //removes duplicate vertices
+                                   //cubeGeo.center();
+                                   //var cubeGeo =  obje.children[0].geometry;//new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
+                                   /*Start of Spheres*/
+                                   //cubeGeo = new THREE.SphereGeometry(1,7,7);
+                                   sphereGeo = cubeGeo;
+                                   //var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0x0000ff, wireframe: false} );
+                                   var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
+                                   console.log("verts: " + cubeMesh.geometry.vertices.length);
+                                   numOfVertices = cubeMesh.geometry.vertices.length;
+                                   var eGeometry = new THREE.EdgesGeometry(cubeMesh.geometry);
+                                   var eMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 1 });
+                                   var edges = new THREE.LineSegments(eGeometry, eMaterial);
+                                   //cubeMesh.add( edges );
+                                   scene.add(cubeMesh);
+                                   //add spheres to mesh, push to objects[], add to scene
+                                   sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
+                                   console.log("objects size: " + objects.length);
+                                   //console.log( "Geometry: "+cubeMesh.geometry.isGeometry );
+                                   //var ageometry = new THREE.Geometry().fromBufferGeometry( cubeMesh.geometry );
+                                   var edgelist = getEdges(cubeMesh.geometry);//cubeMesh.geometry
+                                   //console.log("edgelist: "+edgelist.length);
+                                   for (var i = 0; i < cubeMesh.geometry.vertices.length; i++) {
+                                        eu = edgelist[i].filter(onlyUnique);
+                                        //console.log("edgelist: "+i+": "+eu);
+                                        for (var j = 0; j < eu.length; j++) {
+                                             //console.log("e: "+i+","+eu[j]);
+                                             var cyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                                             var cylinder = cylinderMesh(cubeGeo.vertices[i], cubeGeo.vertices[eu[j]], cyMaterial);
+                                             scene.add(cylinder);
+                                             objects.push(cylinder);
+                                             objects[cylinder.uuid] = cylinder;
+                                        }
+                                   }
+                                   console.log("objects size: " + objects.length);
+                                   console.log("edges: " + (objects.length - cubeMesh.geometry.vertices.length));
+                                   //add spheres to mesh, push to objects[], add to scene
+                                   //sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
+                              },
+                              // called when loading is in progresses
+                              function (xhr) {
+                                   console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                              },
+                              // called when loading has errors
+                              function (error) {
+                                   console.log('An error happened');
+                              }
+                         );
+				}
+				, false);
+			/*=============End of 1st loader.load=============*/
+			if (file) {
+				reader.readAsDataURL(file);
+			}
+
+
 		});
-     document.addEventListener( 'mousedown', onDocumentMouseDown );
-     window.addEventListener( 'resize', onWindowResize, false );
-     function onWindowResize() {
-	     camera.aspect = window.innerWidth / window.innerHeight;
-		camera.updateProjectionMatrix();
-		renderer.setSize( window.innerWidth, window.innerHeight );
-          control.update();
-     }
-}
-
-function onlyUnique(value, index, self) {
-    return self.indexOf(value) === index;
-}
-
-function getEdges(geometry) {
-     var vertices = {};
-     var faceIndices = [ 'a', 'b', 'c', 'd' ];
-     for(var i=0;i<geometry.vertices.length;i++) {
-          vertices[i]=[];
-     }
-     for(var i =0;i<geometry.faces.length;i++) {
-          face = geometry.faces[ i ];
-          numberOfSides = ( face instanceof THREE.Face3 ) ? 3 : 4;
-          var faceVertices = [];
-          for( var j=0;j<numberOfSides; j++) {
-               vertexIndex = face[ faceIndices[ j ] ];
-               faceVertices.push(vertexIndex);
-          }
-          if (vertices[faceVertices[1]].indexOf(faceVertices[0])==-1)
-               vertices[faceVertices[0]].push(faceVertices[1]);
-          if (vertices[faceVertices[2]].indexOf(faceVertices[0])==-1)
-               vertices[faceVertices[0]].push(faceVertices[2]);
-          if (vertices[faceVertices[2]].indexOf(faceVertices[1])==-1)
-               vertices[faceVertices[1]].push(faceVertices[2]);
-/*    vertices.push([ Math.min(faceVertices[0], faceVertices[1]), Math.max(faceVertices[0], faceVertices[1]) ]);
-    vertices.push([ Math.min(faceVertices[0], faceVertices[2]), Math.max(faceVertices[0], faceVertices[2]) ]);
-    vertices.push([ Math.min(faceVertices[1], faceVertices[2]), Math.max(faceVertices[1], faceVertices[2]) ]);*/
-    //console.log("faceVertices length: "+faceVertices.length);
-     }
-     return vertices;
-}
-
-function cylinderMesh(pointX, pointY, material) {
-     var direction = new THREE.Vector3().subVectors(pointY, pointX);
-     var orientation = new THREE.Matrix4();
-     orientation.lookAt(pointX, pointY, new THREE.Object3D().up);
-     orientation.multiply(new THREE.Matrix4().set(
-          1,  0,  0,  0,
-          0,  0,  1,  0,
-          0, -1,  0,  0,
-          0,  0,  0,  1));
-     var edgeGeometry = new THREE.CylinderGeometry(0.01/4, 0.01/4, direction.length(), 8, 1);
-     var edge = new THREE.Mesh(edgeGeometry, material);
-     edge.applyMatrix(orientation);
-     // position based on midpoints - there may be a better solution than this
-     edge.position.x = (pointY.x + pointX.x) / 2;
-     edge.position.y = (pointY.y + pointX.y) / 2;
-     edge.position.z = (pointY.z + pointX.z) / 2;
-     return edge;
-}
-
-/*Pushes the state, index, and color of a marked vertex into the
-markerArray which will be exported to file.*/
-function buildMarkerArray(state, objectIndex, color) {
-     var tempMarkerArray = [];
-     tempMarkerArray.push(state);
-     tempMarkerArray.push(objectIndex);
-     tempMarkerArray.push(color);
-     markerArray.push(tempMarkerArray);
-}
-
-/*Deletes the array of marker data for an element of the specified index
-in the markerArray.*/
-function deleteFromMarkerArray(objectIndex) {
-     var i;
-     var tempArr = [];
-     for (i = 0; i <markerArray.length; i++){
-          if (markerArray[i][1] == objectIndex) {
-               tempArr.push(markerArray[i][0]);
-               tempArr.push(markerArray[i][1]);
-               tempArr.push(markerArray[i][2]);
-               markerArray.splice(i, 1);
-               delMarkerArr.push(tempArr);
-          }
-     }
-}
-
-/*Returns a formatted string detailing marker data, such as marker label,
-index, and color*/
-function buildMarkerDataString(listOfFeatures) {
-     var i;
-     var j;
-     var stringData = "";
-     var NUM_OF_COLS = 3;
-     var NUM_OF_ROWS = listOfFeatures.length;
-     stringData += "#MarkerStart\n";
-     for (i = 0; i < NUM_OF_ROWS; i++) {
-          for (j = 0; j < NUM_OF_COLS; j++) {
-               //MarkerType
-               if (j == 0) {
-                    if (listOfFeatures[i][0] == 1)
-                         stringData += "noseM ";
-                    else if (listOfFeatures[i][0] == 2)
-                         stringData += "l-eyebrowM ";
-                    else if (listOfFeatures[i][0] == 3)
-                         stringData += "r-eyebrowM ";
-                    else if (listOfFeatures[i][0] == 4)
-                         stringData += "l-eyeM ";
-                    else if (listOfFeatures[i][0] == 5)
-                         stringData += "r-eyeM ";
-                    else if (listOfFeatures[i][0] == 6)
-                         stringData += "l-earM ";
-                    else if (listOfFeatures[i][0] == 7)
-                         stringData += "r-earM ";
-                    else if (listOfFeatures[i][0] == 8)
-                         stringData += "chinM ";
+                      //alert(window.location.href);
+	 var filenamex = window.location.href.split("?");
+	 if(filenamex.length == 1){filenamex[1]='obj/'+'face.obj';}
+                         //return filename;
+                         loader.load(
+                              // resource URL
+                              filenamex[1],
+                              // called when resource is loaded
+                              function (obje) {
+                                   var material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: false });
+                                   obje.traverse(function (child) {
+                                        if (child.isMesh) {
+                                             child.material = material;
+                                        }
+                                   });
+                                   //scene.add( obje );
+                                   var bb = new THREE.Box3()
+                                   bb.setFromObject(obje);
+                                   bb.getCenter(control.target);
+                                   var cubeGeo = new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
+                                   cubeGeo.mergeVertices();  //removes duplicate vertices
+                                   //cubeGeo.center();
+                                   //var cubeGeo =  obje.children[0].geometry;//new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
+                                   /*Start of Spheres*/
+                                   //cubeGeo = new THREE.SphereGeometry(1,7,7);
+                                   sphereGeo = cubeGeo;
+                                   //var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0x0000ff, wireframe: false} );
+                                   var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
+                                   console.log("verts: " + cubeMesh.geometry.vertices.length);
+                                   numOfVertices = cubeMesh.geometry.vertices.length;
+                                   var eGeometry = new THREE.EdgesGeometry(cubeMesh.geometry);
+                                   var eMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 1 });
+                                   var edges = new THREE.LineSegments(eGeometry, eMaterial);
+                                   //cubeMesh.add( edges );
+                                   scene.add(cubeMesh);
+                                   //add spheres to mesh, push to objects[], add to scene
+                                   sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
+                                   console.log("objects size: " + objects.length);
+                                   //console.log( "Geometry: "+cubeMesh.geometry.isGeometry );
+                                   //var ageometry = new THREE.Geometry().fromBufferGeometry( cubeMesh.geometry );
+                                   var edgelist = getEdges(cubeMesh.geometry);//cubeMesh.geometry
+                                   //console.log("edgelist: "+edgelist.length);
+                                   for (var i = 0; i < cubeMesh.geometry.vertices.length; i++) {
+                                        eu = edgelist[i].filter(onlyUnique);
+                                        //console.log("edgelist: "+i+": "+eu);
+                                        for (var j = 0; j < eu.length; j++) {
+                                             //console.log("e: "+i+","+eu[j]);
+                                             var cyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                                             var cylinder = cylinderMesh(cubeGeo.vertices[i], cubeGeo.vertices[eu[j]], cyMaterial);
+                                             scene.add(cylinder);
+                                             objects.push(cylinder);
+                                             objects[cylinder.uuid] = cylinder;
+                                        }
+                                   }
+                                   console.log("objects size: " + objects.length);
+                                   console.log("edges: " + (objects.length - cubeMesh.geometry.vertices.length));
+                                   //add spheres to mesh, push to objects[], add to scene
+                                   //sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
+                              },
+                              // called when loading is in progresses
+                              function (xhr) {
+                                   console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                              },
+                              // called when loading has errors
+                              function (error) {
+                                   console.log('An error happened');
+                              }
+                         );
+                    //});
+                    document.getElementById('markerFileInput').addEventListener('change', importMarkerData);
+                    document.addEventListener('mousedown', onDocumentMouseDown);
+                    window.addEventListener('resize', onWindowResize, false);
+                    function onWindowResize() {
+                         camera.aspect = window.innerWidth / window.innerHeight;
+                         camera.updateProjectionMatrix();
+                         renderer.setSize(window.innerWidth, window.innerHeight);
+                         control.update();
+                    }
                }
-               //Object Index
-               if (j == 1)
-                    stringData +=  listOfFeatures[i][1] + " ";
-               //Color
-               else if (j == 2)
-                    stringData += listOfFeatures[i][2] + " "
-          }
-          stringData += "\n";
-     }
-     stringData += "#MarkerEnd\n";
-     return stringData;
-}
-
-/*Undos the most recent deletion of a marker by popping the most recent
-marker data from delMarkerArr, pushing the array to markerArray,
-pushing it back to the appropriate marker array, and reapplying the color.*/
-function undoPreviousDeletion(){
-     if (delMarkerArr.length == 0){
-          alert("There are no markers left to restore.");
-     }
-     else {
-          var singleMarker = delMarkerArr.pop();
-          markerArray.push(singleMarker);
-          var labelState = singleMarker[0];
-          var index = singleMarker[1];
-
-          if (labelState == 1) {    //Nose
-               console.log("Nose point restored");
-               objects[index].material.color.setHex(0xff0000);
-               noseArray.push(index);
-          }
-          else if (labelState == 2) {    //Eyebrows
-               console.log("L Eyebrow point restored");
-               objects[index].material.color.setHex(0xff4000);
-               leyebrowArray.push(index);
-          }
-          else if (labelState == 3){
-               console.log("R Eyebrow point restored");
-               objects[index].material.color.setHex(0xff8000);
-               reyebrowArray.push(i);
-          }
-          else if (labelState == 4){
-               console.log("L Eye point restored");
-               objects[index].material.color.setHex(0x0040ff);
-               leyeArray.push(index);
-          }
-          else if (labelState == 5){
-               console.log("R Eye point restored");
-               objects[index].material.color.setHex(0x0080ff);
-               reyeArray.push(index);
-          }
-          else if (labelState == 6){
-               console.log("L Ear point restored");
-               objects[index].material.color.setHex(0xbf00ff);
-               learArray.push(index);
-          }
-          else if (labelState == 7){
-                    console.log("R Ear point restored");
-                    objects[index].material.color.setHex(0xff00ff);
-                    rearArray.push(index);
-          }
-          else if (labelState == 8){
-                    console.log("chin point restored");
-                    objects[index].material.color.setHex(0x00ff00);
-                    chinArray.push(index);
-          }
-     }
-}
-
-/*Use FileSaver.js, found at https://github.com/eligrey/FileSaver.js/,
-to save marker data to file on client-side.*/
-function exportMarkerData(){
-     var blob = new Blob([markerData], {type: "text;charset=utf-8"});
-     saveAs(blob, "MarkerFile");
-}
-
-/*Reset marker variables for when user wants to restart marking the data again.*/
-function resetStoredMarkerData(){
-     markerArray = [];
-     delMarkerArr = [];
-     markerData = "";
-     noseArray = [];
-     leyebrowArray = [];
-     reyebrowArray = [];
-     leyeArray = [];
-     reyeArray = [];
-     learArray = [];
-     rearArray = [];
-     chinArray = [];
-     var i;
-     for (i = 0; i < defColorArr.length; i++) {
-          objects[defColorArr[i][0]].material.color.setHex(defColorArr[i][1]);
-     }
-     defColorArr = [];
-}
-
-/*Needed to default marked elements to their original colors when
-pressing the 'Reset All' button in the GUI*/
-function getDefaultColor(objectIndex, color) {
-     var tempColorArr = [];
-     tempColorArr.push(objectIndex);
-     tempColorArr.push(color);
-     defColorArr.push(tempColorArr);
-}
-
-//raycast on mouse down
-function onDocumentMouseDown( event ) {
-     //event.preventDefault();
-     var mouse3D = new THREE.Vector2( ( event.clientX / window.innerWidth ) * 2 - 1,
-                                -( event.clientY / window.innerHeight ) * 2 + 1);
-                                    //0.5 );
-     var raycaster =  new THREE.Raycaster();
-     raycaster.setFromCamera( mouse3D, camera );
-     var intersects = raycaster.intersectObjects(objects);
-     var resume = true;
-     //console.log("objects: " + objects.length);
-     //checks for duplicate selected vertex
-     function checkDuplicate(arr, k){
-          var res = true;
-               if(arr.length > 0){
-                    for(var j = 0; j < arr.length; j++){
-                         if(arr[j] == k){
-                              //console.log("duplicate vertex");
-                              res = false;
-                              break;
+               function onlyUnique(value, index, self) {
+                    return self.indexOf(value) === index;
+               }
+               function getEdges(geometry) {
+                    var vertices = {};
+                    var faceIndices = ['a', 'b', 'c', 'd'];
+                    for (var i = 0; i < geometry.vertices.length; i++) {
+                         vertices[i] = [];
+                    }
+                    for (var i = 0; i < geometry.faces.length; i++) {
+                         face = geometry.faces[i];
+                         numberOfSides = (face instanceof THREE.Face3) ? 3 : 4;
+                         var faceVertices = [];
+                         for (var j = 0; j < numberOfSides; j++) {
+                              vertexIndex = face[faceIndices[j]];
+                              faceVertices.push(vertexIndex);
                          }
-                         else{
-                              res = true;
-                              //console.log("ok vertex");
+                         if (vertices[faceVertices[1]].indexOf(faceVertices[0]) == -1)
+                              vertices[faceVertices[0]].push(faceVertices[1]);
+                         if (vertices[faceVertices[2]].indexOf(faceVertices[0]) == -1)
+                              vertices[faceVertices[0]].push(faceVertices[2]);
+                         if (vertices[faceVertices[2]].indexOf(faceVertices[1]) == -1)
+                              vertices[faceVertices[1]].push(faceVertices[2]);
+                         /*    vertices.push([ Math.min(faceVertices[0], faceVertices[1]), Math.max(faceVertices[0], faceVertices[1]) ]);
+                             vertices.push([ Math.min(faceVertices[0], faceVertices[2]), Math.max(faceVertices[0], faceVertices[2]) ]);
+                             vertices.push([ Math.min(faceVertices[1], faceVertices[2]), Math.max(faceVertices[1], faceVertices[2]) ]);*/
+                         //console.log("faceVertices length: "+faceVertices.length);
+                    }
+                    return vertices;
+               }
+               function cylinderMesh(pointX, pointY, material) {
+                    var direction = new THREE.Vector3().subVectors(pointY, pointX);
+                    var orientation = new THREE.Matrix4();
+                    orientation.lookAt(pointX, pointY, new THREE.Object3D().up);
+                    orientation.multiply(new THREE.Matrix4().set(
+                         1, 0, 0, 0,
+                         0, 0, 1, 0,
+                         0, -1, 0, 0,
+                         0, 0, 0, 1));
+                    var edgeGeometry = new THREE.CylinderGeometry(0.01 / 4, 0.01 / 4, direction.length(), 8, 1);
+                    var edge = new THREE.Mesh(edgeGeometry, material);
+                    edge.applyMatrix(orientation);
+                    // position based on midpoints - there may be a better solution than this
+                    edge.position.x = (pointY.x + pointX.x) / 2;
+                    edge.position.y = (pointY.y + pointX.y) / 2;
+                    edge.position.z = (pointY.z + pointX.z) / 2;
+                    return edge;
+               }
+               /*Pushes the state, index, and color of a marked vertex into the
+               markerArray which will be exported to file.*/
+               function buildMarkerArray(state, objectIndex, color) {
+                    var tempMarkerArray = [];
+                    tempMarkerArray.push(state);
+                    tempMarkerArray.push(objectIndex);
+                    tempMarkerArray.push(color);
+                    markerArray.push(tempMarkerArray);
+               }
+               /*Deletes the array of marker data for an element of the specified index
+               in the markerArray.*/
+               function deleteFromMarkerArray(objectIndex) {
+                    var i;
+                    var tempArr = [];
+                    for (i = 0; i < markerArray.length; i++) {
+                         if (markerArray[i][1] == objectIndex) {
+                              tempArr.push(markerArray[i][0]);
+                              tempArr.push(markerArray[i][1]);
+                              tempArr.push(markerArray[i][2]);
+                              markerArray.splice(i, 1);
+                              delMarkerArr.push(tempArr);
                          }
                     }
                }
-               return res;
-     }
-     function deleteIndex(arr, k){
-          for(var j = 0; j < arr.length; j++){
-               if(arr[j] == k){
-                    arr.splice(j, 1);
-                    if(k <= sphereGeo.vertices.length){
-                         objects[k].material.color.setHex(0x43a242);
+
+               /*Builds the marker string for a specific state.*/
+               function buildStringByState(state, label, listOfFeatures, array) {
+                    var string = label + "\n";
+                    var i = stateIndex;
+                    if (array.length == 0 && label != "#vertexPosStart")
+                         return string = "";
+                    if (label == "#vertexPosStart") {
+                         var index = 0;
+                         var markerIndex;
+                         for (index = 0; index < listOfFeatures.length; index++) {
+                              if (listOfFeatures[index][1] <= numOfVertices) {
+                                   markerIndex = listOfFeatures[index][1];
+                                   var vertX = objects[markerIndex].geometry.vertices[0].x
+                                   var vertY = objects[markerIndex].geometry.vertices[0].y
+                                   var vertZ = objects[markerIndex].geometry.vertices[0].z
+                                   if (vertX < 0)
+                                        string += "v " + vertX.toString().substring(0, 9);
+                                   else
+                                        string += "v " + vertX.toString().substring(0, 8);
+                                   if (vertY < 0)
+                                        string += " " + vertY.toString().substring(0, 9);
+                                   else
+                                        string += " " + vertY.toString().substring(0, 8);
+                                   if (vertZ < 0)
+                                        string += " " + vertZ.toString().substring(0, 9) + "\n";
+                                   else
+                                        string += " " + vertZ.toString().substring(0, 8) + "\n";
+                              }
+                         }
+                         string += "#vertexPosEnd\n";
+                    }
+                    while (listOfFeatures[i][0] == state) {
+                         console.log("In state " + state + " index is " + i);
+                         //Index
+                         string += listOfFeatures[i][1] + " ";
+                         //Color
+                         string += listOfFeatures[i][2] + "\n";
+                         if (i == listOfFeatures.length - 1)
+                              break;
+                         i++;
+                    }
+                    stateIndex = i;
+                    return string;
+               }
+
+               /*(Second Version)Returns a formatted string detailing marker data, such as marker label,
+               index, */
+               function buildMarkerDataString(listOfFeatures) {
+                    var stringData = "";
+                    stringData += "#MarkerStart\n";
+                    stringData += buildStringByState(1, "#noseM", listOfFeatures, noseArray);
+                    stringData += buildStringByState(2, "#l-eyebrowM", listOfFeatures, leyebrowArray);
+                    stringData += buildStringByState(3, "#r-eyebrowM", listOfFeatures, reyebrowArray);
+                    stringData += buildStringByState(4, "#l-eyeM", listOfFeatures, leyeArray);
+                    stringData += buildStringByState(5, "#r-eyeM", listOfFeatures, reyeArray);
+                    stringData += buildStringByState(6, "#l-earM", listOfFeatures, learArray);
+                    stringData += buildStringByState(7, "#r-earM", listOfFeatures, rearArray);
+                    stringData += buildStringByState(8, "#chinM", listOfFeatures, chinArray);
+                    stringData += "#MarkerEnd\n";
+                    stringData += buildStringByState(0, "#vertexPosStart", listOfFeatures, []);
+                    return stringData;
+               }
+
+               /*Returns a formatted string detailing marker data, such as marker label,
+               index, and color
+               function buildMarkerDataString(listOfFeatures) {
+                    var i;
+                    var j;
+                    var stringData = "";
+                    var NUM_OF_COLS = 3;
+                    var NUM_OF_ROWS = listOfFeatures.length;
+                    stringData += "#MarkerStart\n";
+                    for (i = 0; i < NUM_OF_ROWS; i++) {
+                         for (j = 0; j < NUM_OF_COLS; j++) {
+                              //MarkerType
+                              if (j == 0) {
+                                   if (listOfFeatures.length > 1) {
+                                        lastState = listOfFeatures[i][0];
+                                        console.log(lastState);
+                                   }
+                                   if (listOfFeatures[i][0] == 1)
+                                        stringData += "noseM ";
+                                   else if (listOfFeatures[i][0] == 2)
+                                        stringData += "l-eyebrowM ";
+                                   else if (listOfFeatures[i][0] == 3)
+                                        stringData += "r-eyebrowM ";
+                                   else if (listOfFeatures[i][0] == 4)
+                                        stringData += "l-eyeM ";
+                                   else if (listOfFeatures[i][0] == 5)
+                                        stringData += "r-eyeM ";
+                                   else if (listOfFeatures[i][0] == 6)
+                                        stringData += "l-earM ";
+                                   else if (listOfFeatures[i][0] == 7)
+                                        stringData += "r-earM ";
+                                   else if (listOfFeatures[i][0] == 8)
+                                        stringData += "chinM ";
+                              }
+                              //Object Index
+                              if (j == 1)
+                                   stringData +=  listOfFeatures[i][1] + " ";
+                              //Color
+                              else if (j == 2)
+                                   stringData += listOfFeatures[i][2] + " "
+                         }
+                         stringData += "\n";
+                    }
+                    stringData += "#MarkerEnd\n";
+                    return stringData;
+               }*/
+
+               /*Auxilary sorter that is passed to JS sort() in the "Export Marker" function to sort by column in a
+               multidimensional array*/
+               function sortByState(firstVal, secondVal) {
+                    if (firstVal[0] === secondVal[0])
+                         return 0;
+                    else
+                         return (firstVal[0] < secondVal[0]) ? -1 : 1;
+               }
+
+               /*Undos the most recent deletion of a marker by popping the most recent
+               marker data from delMarkerArr, pushing the array to markerArray,
+               pushing it back to the appropriate marker array, and reapplying the color.*/
+               function undoPreviousDeletion() {
+                    if (delMarkerArr.length == 0) {
+                         alert("There are no markers left to restore.");
                     }
                     else {
-                         objects[k].material.color.setHex(0xffffff);
+                         var singleMarker = delMarkerArr.pop();
+                         markerArray.push(singleMarker);
+                         var labelState = singleMarker[0];
+                         var index = singleMarker[1];
+                         if (labelState == 1) {    //Nose
+                              console.log("Nose point restored");
+                              objects[index].material.color.setHex(0xff0000);
+                              noseArray.push(index);
+                         }
+                         else if (labelState == 2) {    //Eyebrows
+                              console.log("L Eyebrow point restored");
+                              objects[index].material.color.setHex(0xff4000);
+                              leyebrowArray.push(index);
+                         }
+                         else if (labelState == 3) {
+                              console.log("R Eyebrow point restored");
+                              objects[index].material.color.setHex(0xff8000);
+                              reyebrowArray.push(i);
+                         }
+                         else if (labelState == 4) {
+                              console.log("L Eye point restored");
+                              objects[index].material.color.setHex(0x0040ff);
+                              leyeArray.push(index);
+                         }
+                         else if (labelState == 5) {
+                              console.log("R Eye point restored");
+                              objects[index].material.color.setHex(0x0080ff);
+                              reyeArray.push(index);
+                         }
+                         else if (labelState == 6) {
+                              console.log("L Ear point restored");
+                              objects[index].material.color.setHex(0xbf00ff);
+                              learArray.push(index);
+                         }
+                         else if (labelState == 7) {
+                              console.log("R Ear point restored");
+                              objects[index].material.color.setHex(0xff00ff);
+                              rearArray.push(index);
+                         }
+                         else if (labelState == 8) {
+                              console.log("chin point restored");
+                              objects[index].material.color.setHex(0x00ff00);
+                              chinArray.push(index);
+                         }
                     }
                }
-          }
-     }
-     if ( intersects.length > 0 ) {
-          //console.log("intersects.length: "+intersects.length);
-          //console.log("intersected objects position: "+intersects[ 0 ].object.uuid);
-          //console.log("v: " + intersects[ 0 ].object.geometry.vertices[0]);
-          for(var i=0; i<objects.length; i++) {
-               if (objects[i].uuid == intersects[0].object.uuid) {
-                    console.log("We got object: "+i);
-                    //switch based on current state
-                    switch(state){
-                         case -1:
-                              deleteIndex(noseArray, i);
-                              deleteFromMarkerArray(i);
-                              break;
-                         case -2:
-                              deleteIndex(leyebrowArray, i);
-                              deleteFromMarkerArray(i);
-                              break;
+               /*Use FileSaver.js, found at https://github.com/eligrey/FileSaver.js/,
+               to save marker data to file on client-side.*/
+               function exportMarkerData() {
+                    var blob = new Blob([markerData], { type: "text;charset=utf-8" });
+                    saveAs(blob, "MarkerFile.txt");
+               }
 
-                         case -3:
-                              deleteIndex(reyebrowArray, i);
-                              deleteFromMarkerArray(i);
-                              break;
-                         case -4:
-                              deleteIndex(leyeArray, i);
-                              deleteFromMarkerArray(i);
-                              break;
-                         case -5:
-                              deleteIndex(reyeArray, i);
-                              deleteFromMarkerArray(i);
-                              break;
-                         case -6:
-                              deleteIndex(learArray, i);
-                              deleteFromMarkerArray(i);
-                              break;
-                         case -7:
-                              deleteIndex(rearArray, i);
-                              deleteFromMarkerArray(i);
-                              break;
-                         case -8:
-                              deleteIndex(chinArray, i);
-                              deleteFromMarkerArray(i);
-                              break;
-                         case 1:     //Nose
-                              resume = checkDuplicate(noseArray, i);  //duplicate?
-                              console.log("resume: " + resume);
-                              if(resume == true){
-                                   console.log("Nose point");
-                                   getDefaultColor(i, objects[i].material.color.getHex());
-                                   objects[i].material.color.setHex(0xff0000);   //see selection
-                                   noseArray.push(i);  //not duplicate, so push (index) to array
-                                   buildMarkerArray(state, i, objects[i].material.color.getHexString());
-                              }
-                              break;
-                         case 2:     //Eyebrows
-                              resume = checkDuplicate(leyebrowArray, i);
-                              console.log("resume: " + resume);
-                              if(resume == true){
-                                   console.log("L Eyebrow point");
-                                   getDefaultColor(i, objects[i].material.color.getHex());
-                                   objects[i].material.color.setHex(0xff4000);
-                                   leyebrowArray.push(i);
-                                   buildMarkerArray(state, i, objects[i].material.color.getHexString());
-                              }
-                              break;
-                         case 3:
-                              resume = checkDuplicate(reyebrowArray, i);
-                              console.log("resume: " + resume);
-                              if(resume == true){
-                                   console.log("R Eyebrow point");
-                                   getDefaultColor(i, objects[i].material.color.getHex());
-                                   objects[i].material.color.setHex(0xff8000);
-                                   reyebrowArray.push(i);
-                                   buildMarkerArray(state, i, objects[i].material.color.getHexString());
-                              }
-                              break;
-                         case 4: //Eyes
-                              resume = checkDuplicate(leyeArray, i);
-                              console.log("resume: " + resume);
-                              if(resume == true){
-                                   console.log("L Eye point");
-                                   getDefaultColor(i, objects[i].material.color.getHex());
-                                   objects[i].material.color.setHex(0x0040ff);
-                                   leyeArray.push(i);
-                                   buildMarkerArray(state, i, objects[i].material.color.getHexString());
-                             }
-                             break;
-                         case 5:
-                              resume = checkDuplicate(reyeArray, i);
-                              console.log("resume: " + resume);
-                              if(resume == true){
-                                   console.log("R Eye point");
-                                   getDefaultColor(i, objects[i].material.color.getHex());
-                                   objects[i].material.color.setHex(0x0080ff);
-                                   reyeArray.push(i);
-                                   buildMarkerArray(state, i, objects[i].material.color.getHexString());
-                              }
-                              break;
-                         case 6: //Ears
-                              resume = checkDuplicate(learArray, i);
-                              console.log("resume: " + resume);
-                              if(resume == true){
-                                   console.log("L Ear point");
-                                   getDefaultColor(i, objects[i].material.color.getHex());
-                                   objects[i].material.color.setHex(0xbf00ff);
-                                   learArray.push(i);
-                                   buildMarkerArray(state, i, objects[i].material.color.getHexString());
-                              }
-                              break;
-                         case 7:
-                              resume = checkDuplicate(rearArray, i);
-                              console.log("resume: " + resume);
-                              if(resume == true){
-                                   console.log("R Ear point");
-                                   getDefaultColor(i, objects[i].material.color.getHex());
-                                   objects[i].material.color.setHex(0xff00ff);
-                                   rearArray.push(i);
-                                   buildMarkerArray(state, i, objects[i].material.color.getHexString());
-                              }
-                              break;
-                         case 8:
-                              resume = checkDuplicate(chinArray, i);
-                              console.log("resume: " + resume);
-                              if(resume == true){
-                                   console.log("chin point");
-                                   getDefaultColor(i, objects[i].material.color.getHex());
-                                   objects[i].material.color.setHex(0x00ff00);
-                                   chinArray.push(i);
-                                   buildMarkerArray(state, i, objects[i].material.color.getHexString());
-                             }
-                             break;
-                         default:    //Null
-                             console.log("Null state");
-                             break;
+               /*Used to clear the data from arrays.*/
+               function eraseArray(array) {
+                    while (array.length) {
+                         array.pop();
                     }
                }
-          }
-                //intersects[ 0 ].object.material.color.setHex( Math.random() * 0xffffff );
-     }
-}
 
-//Create gui and handle gui events
-function displayGUI(){
-     var gui = new dat.GUI();
-
-     function printArrays(boolean){
-       document.getElementById("printinfo").innerHTML = "Nose: " + noseArray
-                                                   + "\nL Eyebrow: " + leyebrowArray
-                                                   + "\nR Eyebrow: " + reyebrowArray
-                                                   + "\nL Eye: " + leyeArray
-                                                   + "\nR Eye: " + reyeArray
-                                                   + "\nL Ear: " + learArray
-                                                   + "\nR Ear: " + rearArray
-                                                   + "\nChin: " + chinArray;
-          if(boolean == true){
-               document.getElementById("printinfo").style.display = "block";
-          }
-          else {
-               document.getElementById("printinfo").style.display = "none";
-          }
-     }
-     function showCmds(boolean){
-          if(boolean == true) {
-               document.getElementById("cmds").innerHTML = "Click anywhere on label text field then type commands: " + "\nadd" + "\ndel"
-                                                         + "\nThen press Enter";
-               document.getElementById("cmds").style.display = "block";
-          }
-          else {
-               document.getElementById("cmds").style.display = "none";
-          }
-     }
-     function ObjBrowse(boolean){
-		  document.getElementById("objBrowseInput").click();
-          if(boolean == true) {
-               //document.getElementById("cmds").innerHTML = "Click anywhere on label text field then type commands: " + "\nadd" + "\ndel"
-                                                         + "\nThen press Enter";
-               //document.getElementById("cmds").style.display = "block";
-          }
-          else {
-               //document.getElementById("cmds").style.display = "none";
-          }
-
-
-     }
-     var str = "-";
-     var controller = new function(){
-          this.Nose = str;
-          this.Leyebrow = str;
-          this.Reyebrow = str;
-          this.Leye = str;
-          this.Reye = str;
-          this.Lear = str;
-          this.Rear = str;
-          this.Chin = str;
-          this.Save = function () {
-               markerData = buildMarkerDataString(markerArray);
-               exportMarkerData();
-          };
-          this.Load = function () {
-               //Loader code goes here
-          };
-          this.Undo = function() {
-               undoPreviousDeletion();
-          }
-          this.Reset = function() {
-               resetStoredMarkerData();
-               controller.Nose = str;
-               controller.Leyebrow = str;
-               controller.Reyebrow = str;
-               controller.Leye = str;
-               controller.Reye = str;
-               controller.Lear = str;
-               controller.Rear = str;
-               controller.Chin = str;
-          };
-          this.nullCheck = function(){
-               state = 0;
-               document.getElementById("info").innerHTML = "Null State";
-          };
-          this.Print = false;
-          this.Cmds = false;
-          this.ObjBrowse = function(){
-            document.getElementById("objBrowseInput").click();
-          };
-     }();
-     //Regex for "add" and "del"
-     function matches(locController, stateVal, name){
-          if(typeof locController === 'string'){
-               if(locController.match(/add/i)){
-                    state = stateVal;
-                    document.getElementById("info").innerHTML = "Add : " + name;
+               /* Refresh colored points to default colors based on numOfVertices */
+               function refreshColors(){
+                 for(i = 0; i < objects.length; i++){
+                   if(i < sphereGeo.vertices.length){
+                     objects[i].material.color.setHex(0x43a242);
+                   }
+                   else{
+                     objects[i].material.color.setHex(0xffffff);
+                   }
+                 }
                }
-               else if(locController.match(/del/i)){
-                    state = -stateVal;
-                    document.getElementById("info").innerHTML = "Delete : " + name;
+
+               /*Reset marker variables for when user wants to restart marking the data again.*/
+               function resetStoredMarkerData() {
+                    console.log(markerArray);
+                    eraseArray(markerArray);
+                    if(markerArray.length < 1){
+                      refreshColors();
+                    }
+                    eraseArray(delMarkerArr);
+                    eraseArray(noseArray);
+                    eraseArray(leyebrowArray);
+                    eraseArray(reyebrowArray);
+                    eraseArray(leyeArray);
+                    eraseArray(reyeArray);
+                    eraseArray(learArray);
+                    eraseArray(rearArray);
+                    eraseArray(chinArray);
+                    markerData = "";
+                    var i;
+                    for (i = 0; i < defColorArr.length; i++) {
+                         objects[defColorArr[i][0]].material.color.setHex(defColorArr[i][1]);
+                    }
+                    eraseArray(defColorArr);
+                    stateIndex = 0;
+                    numOfVertices = 0;
                }
-               else{
-                    state = 0;
-                    document.getElementById("info").innerHTML = "Null State";
+               /*Needed to default marked elements to their original colors when
+               pressing the 'Reset All' button in the GUI*/
+               function getDefaultColor(objectIndex, color) {
+                    var tempColorArr = [];
+                    tempColorArr.push(objectIndex);
+                    tempColorArr.push(color);
+                    defColorArr.push(tempColorArr);
                }
-          }
-     }
-     var labels = gui.addFolder('Labels');
-     var methods = gui.addFolder('Methods');
-     //Nose
-     labels.add(controller, 'Nose', str).onFinishChange(function(){
-          matches(controller.Nose, 1, "Nose");
-          (controller.Nose) = noseArray;    //see verts/edges from array in gui
-     }).listen();
-     //Eyebrows
-     labels.add(controller, 'Leyebrow', str).name('L eyebrow').onFinishChange(function(){
-          matches(controller.Leyebrow, 2, "L eyebrow");
-          (controller.Leyebrow) = leyebrowArray;
-     }).listen();
-     labels.add(controller, 'Reyebrow', str).name('R eyebrow').onFinishChange(function(){
-          matches(controller.Reyebrow, 3, "R eyebrow");
-          (controller.Reyebrow) = reyebrowArray;
-     }).listen();
-     //Eyes
-     labels.add(controller, 'Leye', str).name('L eye').onFinishChange(function(){
-          matches(controller.Leye, 4, "L eye");
-          (controller.Leye) = leyeArray;
-     }).listen();
-     labels.add(controller, 'Reye', str).name('R eye').onFinishChange(function(){
-          matches(controller.Reye, 5, "R eye");
-          (controller.Reye) = reyeArray;
-     }).listen();
-     //Ears
-     labels.add(controller, 'Lear', str).name('L ear').onFinishChange(function(){
-          matches(controller.Lear, 6, "L ear");
-          (controller.Lear) = learArray;
-     }).listen();
-     labels.add(controller, 'Rear', str).name('R ear').onFinishChange(function(){
-          matches(controller.Rear, 7, "R ear");
-          (controller.Rear) = rearArray;
-     }).listen();
-     //Chin
-     labels.add(controller, 'Chin', str).onFinishChange(function(){
-          matches(controller.Chin, 8, "Chin");
-          (controller.Chin) = chinArray;
-     }).listen();
-     labels.add(controller, 'Undo', false).name('Undo Deletion');
-     labels.add(controller, 'Reset', false).name('Reset All');
-     labels.add(controller, 'nullCheck').name('Null State');//.onChange(function(){
-     //state = 0;  //Null state  //});
-     methods.add(controller, 'Print', false).name('Show Print').onChange(function(){
-          printArrays(controller.Print);
-     }).listen();
-     methods.add(controller, 'Cmds', false).name('Show Commands').onChange(function(){
-          showCmds(controller.Cmds);
-     });
+               /* explicitly color each object (vertex/edge) - (there may be a better way to do this) */
+               function updateColor(arr, obj, color) {
+                    for (var i = 0; i < obj.length; i++) {
+                         for (var j = 0; j < arr.length; j++) {
+                              if (arr[j] == i) {
+                                   obj[i].material.color.setHex(color);
+                              }
+                         }
+                    }
+               }
+               /*** Marker file loader ***/
+               function importMarkerData(event) {
+                    console.log("IMPORTING MARKER DATA");
+                    // Load & read text file
+                    input = event.target;
+                    var text = "";
+                    var reader = new FileReader();
+                    reader.onload = function () {
+                         text = reader.result;
+                         var vertices = [];
+                         vertices = parseObj(text);
+                         // Loading into array
+                         console.log("LOADING INTO ARRAYS");
+                         for (var i = 0; i < vertices.length; i++) {
+                              //objects[i].material.color.setHex("0x" + vertices[i][2]); //color data not required as per our professor
+                              console.log("adding " + vertices[i][0] + " " + vertices[i][1] + " " + objects[i].material.color.getHexString());
+                              console.log("state of said vertex: " + vertices[i][0]);
+                              switch (vertices[i][0]) {
+                                   case '1':     //Nose
+                                        console.log("Adding nose");
+                                        noseArray.push(vertices[i][1]);
+                                        break;
+                                   case '2':     //Eyebrows
+                                        leyebrowArray.push(vertices[i][1]);
+                                        break;
+                                   case '3':
+                                        reyebrowArray.push(vertices[i][1]);
+                                        break;
+                                   case '4': //Eyes
+                                        leyeArray.push(vertices[i][1]);
+                                        break;
+                                   case '5':
+                                        reyeArray.push(vertices[i][1]);
+                                        break;
+                                   case '6': //Ears
+                                        learArray.push(vertices[i][1]);
+                                        break;
+                                   case '7':
+                                        rearArray.push(vertices[i][1]);
+                                        break;
+                                   case '8': //Chin
+                                        chinArray.push(vertices[i][1]);
+                                        break;
+                                   default:
+                                        console.log("adding2 " + vertices[i][0] + " " + vertices[i][1] + " " + objects[i].material.color.getHexString());
+                              }
+                              buildMarkerArray(vertices[i][0], vertices[i][1], 0xff0000);
+                         }
+                         updateColor(noseArray, objects, 0xff0000); //call updateColor to red for nose
+                         updateColor(leyebrowArray, objects, 0xff4000);
+                         updateColor(reyebrowArray, objects, 0xff8000);
+                         updateColor(leyeArray, objects, 0x0040ff);
+                         updateColor(reyeArray, objects, 0x0080ff);
+                         updateColor(learArray, objects, 0xbf00ff);
+                         updateColor(rearArray, objects, 0xff00ff);
+                         updateColor(chinArray, objects, 0x00ff00);
+                    };
+                    reader.readAsText(input.files[0]);
+               }
+               /* Parses a previously exported marker file and returns an
+                  array of vertices in the format {state/label, index, color} */
+               function parseObj(mainText) {
+                    console.log("PARSING TEXT");
+                    var vertices = [];
+                    if (mainText.indexOf('#MarkerStart') == -1) {
+                         alert("Invalid marker file.");
+                    }
+                    else {
+                         mainText = mainText.substring(mainText.indexOf('#MarkerStart'));      // Find beginning of marker comments
+                         mainText = mainText.substring(mainText.indexOf('\n') + 1);              // Move to first line of data
+                         var state = 0;
+                         while (mainText.indexOf('#MarkerEnd') != 0) {                           // Iterate through markers
+                              var line = mainText.substring(0, mainText.indexOf('\n'));
+                              console.log(line);
+                              // If this line is a new label, convert the label name to its state numberr
+                              switch (line) {
+                                   case '#noseM':
+                                        state = 1;
+                                        break;
+                                   case '#l-eyebrowM':
+                                        state = 2;
+                                        break;
+                                   case '#r-eyebrowM':
+                                        state = 3;
+                                        break;
+                                   case '#l-eyeM':
+                                        state = 4;
+                                        break;
+                                   case '#r-eyeM':
+                                        state = 5;
+                                        break;
+                                   case '#l-earM':
+                                        state = 6;
+                                        break;
+                                   case '#r-earM':
+                                        state = 7;
+                                        break;
+                                   case '#chinM':
+                                        state = 8;
+                                        break;
+                                   // Else, add the label to the vertices array
+                                   default:
+                                        line = state + " " + line;
+                                        console.log("Combined line: " + line);
+                                        vertex = line.split(" ");
+                                        console.log("VERTEX : " + vertex);
+                                        vertices.push(vertex);
+                              }
+                              mainText = mainText = mainText.substring(mainText.indexOf('\n') + 1);  //Next Line
+                         }
+                    }
+                    return vertices;
+               }
+               //raycast on mouse down
+               function onDocumentMouseDown(event) {
+                    //event.preventDefault();
+                    var mouse3D = new THREE.Vector2((event.clientX / window.innerWidth) * 2 - 1,
+                         -(event.clientY / window.innerHeight) * 2 + 1);
+                    //0.5 );
+                    var raycaster = new THREE.Raycaster();
+                    raycaster.setFromCamera(mouse3D, camera);
+                    var intersects = raycaster.intersectObjects(objects);
+                    var resume = true;
+                    //console.log("objects: " + objects.length);
+                    //checks for duplicate selected vertex
+                    function checkDuplicate(arr, k) {
+                         var res = true;
+                         if (arr.length > 0) {
+                              for (var j = 0; j < arr.length; j++) {
+                                   if (arr[j] == k) {
+                                        //console.log("duplicate vertex");
+                                        res = false;
+                                        break;
+                                   }
+                                   else {
+                                        res = true;
+                                        //console.log("ok vertex");
+                                   }
+                              }
+                         }
+                         return res;
+                    }
+                    function deleteIndex(arr, k) {
+                         for (var j = 0; j < arr.length; j++) {
+                              if (arr[j] == k) {
+                                   arr.splice(j, 1);
+                                   if (k < sphereGeo.vertices.length) {
+                                        objects[k].material.color.setHex(0x43a242);
+                                   }
+                                   else {
+                                        objects[k].material.color.setHex(0xffffff);
+                                   }
+                              }
+                         }
+                    }
+                    if (intersects.length > 0) {
+                         //console.log("intersects.length: "+intersects.length);
+                         //console.log("intersected objects position: "+intersects[ 0 ].object.uuid);
+                         //console.log("v: " + intersects[ 0 ].object.geometry.vertices[0]);
+                         for (var i = 0; i < objects.length; i++) {
+                              if (objects[i].uuid == intersects[0].object.uuid) {
+                                   console.log("We got object: " + i);
+                                   //switch based on current state
+                                   switch (state) {
+                                        case -1:
+                                             deleteIndex(noseArray, i);
+                                             deleteFromMarkerArray(i);
+                                             break;
+                                        case -2:
+                                             deleteIndex(leyebrowArray, i);
+                                             deleteFromMarkerArray(i);
+                                             break;
+                                        case -3:
+                                             deleteIndex(reyebrowArray, i);
+                                             deleteFromMarkerArray(i);
+                                             break;
+                                        case -4:
+                                             deleteIndex(leyeArray, i);
+                                             deleteFromMarkerArray(i);
+                                             break;
+                                        case -5:
+                                             deleteIndex(reyeArray, i);
+                                             deleteFromMarkerArray(i);
+                                             break;
+                                        case -6:
+                                             deleteIndex(learArray, i);
+                                             deleteFromMarkerArray(i);
+                                             break;
+                                        case -7:
+                                             deleteIndex(rearArray, i);
+                                             deleteFromMarkerArray(i);
+                                             break;
+                                        case -8:
+                                             deleteIndex(chinArray, i);
+                                             deleteFromMarkerArray(i);
+                                             break;
+                                        case 1:     //Nose
+                                             resume = checkDuplicate(noseArray, i);  //duplicate?
+                                             console.log("resume: " + resume);
+                                             if (resume == true) {
+                                                  console.log("Nose point");
+                                                  getDefaultColor(i, objects[i].material.color.getHex());
+                                                  objects[i].material.color.setHex(0xff0000);   //see selection
+                                                  noseArray.push(i);  //not duplicate, so push (index) to array
+                                                  buildMarkerArray(state, i, objects[i].material.color.getHexString());
+                                             }
+                                             break;
+                                        case 2:     //Eyebrows
+                                             resume = checkDuplicate(leyebrowArray, i);
+                                             console.log("resume: " + resume);
+                                             if (resume == true) {
+                                                  console.log("L Eyebrow point");
+                                                  getDefaultColor(i, objects[i].material.color.getHex());
+                                                  objects[i].material.color.setHex(0xff4000);
+                                                  leyebrowArray.push(i);
+                                                  buildMarkerArray(state, i, objects[i].material.color.getHexString());
+                                             }
+                                             break;
+                                        case 3:
+                                             resume = checkDuplicate(reyebrowArray, i);
+                                             console.log("resume: " + resume);
+                                             if (resume == true) {
+                                                  console.log("R Eyebrow point");
+                                                  getDefaultColor(i, objects[i].material.color.getHex());
+                                                  objects[i].material.color.setHex(0xff8000);
+                                                  reyebrowArray.push(i);
+                                                  buildMarkerArray(state, i, objects[i].material.color.getHexString());
+                                             }
+                                             break;
+                                        case 4: //Eyes
+                                             resume = checkDuplicate(leyeArray, i);
+                                             console.log("resume: " + resume);
+                                             if (resume == true) {
+                                                  console.log("L Eye point");
+                                                  getDefaultColor(i, objects[i].material.color.getHex());
+                                                  objects[i].material.color.setHex(0x0040ff);
+                                                  leyeArray.push(i);
+                                                  buildMarkerArray(state, i, objects[i].material.color.getHexString());
+                                             }
+                                             break;
+                                        case 5:
+                                             resume = checkDuplicate(reyeArray, i);
+                                             console.log("resume: " + resume);
+                                             if (resume == true) {
+                                                  console.log("R Eye point");
+                                                  getDefaultColor(i, objects[i].material.color.getHex());
+                                                  objects[i].material.color.setHex(0x0080ff);
+                                                  reyeArray.push(i);
+                                                  buildMarkerArray(state, i, objects[i].material.color.getHexString());
+                                             }
+                                             break;
+                                        case 6: //Ears
+                                             resume = checkDuplicate(learArray, i);
+                                             console.log("resume: " + resume);
+                                             if (resume == true) {
+                                                  console.log("L Ear point");
+                                                  getDefaultColor(i, objects[i].material.color.getHex());
+                                                  objects[i].material.color.setHex(0xbf00ff);
+                                                  learArray.push(i);
+                                                  buildMarkerArray(state, i, objects[i].material.color.getHexString());
+                                             }
+                                             break;
+                                        case 7:
+                                             resume = checkDuplicate(rearArray, i);
+                                             console.log("resume: " + resume);
+                                             if (resume == true) {
+                                                  console.log("R Ear point");
+                                                  getDefaultColor(i, objects[i].material.color.getHex());
+                                                  objects[i].material.color.setHex(0xff00ff);
+                                                  rearArray.push(i);
+                                                  buildMarkerArray(state, i, objects[i].material.color.getHexString());
+                                             }
+                                             break;
+                                        case 8:
+                                             resume = checkDuplicate(chinArray, i);
+                                             console.log("resume: " + resume);
+                                             if (resume == true) {
+                                                  console.log("chin point");
+                                                  getDefaultColor(i, objects[i].material.color.getHex());
+                                                  objects[i].material.color.setHex(0x00ff00);
+                                                  chinArray.push(i);
+                                                  buildMarkerArray(state, i, objects[i].material.color.getHexString());
+                                             }
+                                             break;
+                                        default:    //Null
+                                             console.log("Null state");
+                                             break;
+                                   }
+                              }
+                         }
+                         //intersects[ 0 ].object.material.color.setHex( Math.random() * 0xffffff );
+                    }
+               }
 
-	   methods.add(controller, 'ObjBrowse').name('Load Obj');
-     methods.add(controller, 'Save', false).name('Export Markers');
-     methods.add(controller, 'Load', false).name('Import Markers');
-     gui.open();
-}
-
-function showLog() {
-/* var log = "Object Info...</br>Number of vertices: "+ sphereGeo.vertices.length;
-    for (i = 0; i < sphereGeo.vertices.length; i++) {
-      log+="</br> vertex["+i+"]: "+ sphereGeo.vertices[i].x+", "+ sphereGeo.vertices[i].y+ ", "+ sphereGeo.vertices[i].z;
-    }
-    document.getElementById("log").innerHTML=log;*/
-}
-
-function showLogLive() {
-     var logLive = "Object Info...</br>Number of vertices: "+ sphereGeo.vertices.length;
-     logLive += "</br> Projected Vertex coordinates:";
-     for (i = 0; i < sphereGeo.vertices.length; i++) {
-          var proj = createVector(sphereGeo.vertices[i].x, sphereGeo.vertices[i].y, sphereGeo.vertices[i].z, camera, renderer.context.canvas.width, renderer.context.canvas.height);
-          logLive += "</br> vertex["+i+"]: "+ proj.x+", "+proj.y;
-     }
-     document.getElementById("logLive").innerHTML=logLive;
-}
-
-function showCoords(event) {
-     var vector = new THREE.Vector3();
-     vector.set(
-          ( event.clientX / window.innerWidth ) * 2 - 1,
-        - ( event.clientY / window.innerHeight ) * 2 + 1, 0.5
-     );
-     vector.unproject( camera );
-     var dir = vector.sub( camera.position ).normalize();
-     var distance = - camera.position.z / dir.z;
-     var pos = camera.position.clone().add( dir.multiplyScalar( distance ) );
-     var pos2 = createVector(pos.x, pos.y, 0, camera, window.innerWidth, window.height);
-     alert(pos2.x+" "+pos2.y);
-}
-
-function printArraysLive(){
-		document.getElementById("printinfo").innerHTML = "Nose: " + noseArray
-                                                           + "\nL Eyebrow: " + leyebrowArray
-                                                           + "\nR Eyebrow: " + reyebrowArray
-                                                           + "\nL Eye: " + leyeArray
-                                                           + "\nR Eye: " + reyeArray
-                                                           + "\nL Ear: " + learArray
-                                                           + "\nR Ear: " + rearArray
-                                                           + "\nChin: " + chinArray;
-	 }
-
-function animate() {
-     requestAnimationFrame( animate );
-     update();
-     render();
-	stats.update();
-}
-
-function update() {
-    control.update();
-    printArraysLive();
-}
-
-function render() {
-    renderer.render(scene, camera);
-}
-
-function onCameraChange() {
-     //showLogLive();
-     //var proj = toScreenPosition(sphereGeo.vertices[i], camera);
-     //showLog();
-     //document.getElementById("log").innerHTML+="</br> projected coordinate: "+proj.x+", "+proj.y;
-     //var proj = toScreenPosition(divObj, camera);
-     //divElem.style.left = proj.x + 'px';
-     //divElem.style.top = proj.y + 'px';
-}
-
-function createVector(x, y, z, camera, width, height) {
-     var p = new THREE.Vector3(x, y, z);
-     var vector = p.project(camera);
-     vector.x = (vector.x + 1) / 2 * width;
-     vector.y = -(vector.y - 1) / 2 * height;
-     return vector;
-}
-
-
-}//Part of onload function
-
-var lastInputID;
-var polyLineObjects = [];
-$(document).ready(function(){
-     document.body.appendChild( stats.dom );
-     $("#btn2").click(function(){
-	     var lID = $( "#labelName" ).val().replace(/\s/g, '');
-          $("ol").append("<li>"+$( "#labelName" ).val()+"</li><input placeholder='Click here then on sphere' id='input"+lID+"'><input type='checkbox' id='poly"+lID+"' value='show'> Show poly lines");
-          $("#input"+lID).on("click", function() {
-               console.log("Clicked input.");
-               lastInputID = $(this).attr("id");
-		     console.log("Last input id: "+ lastInputID);
-         });
-     $("#poly"+lID).on("click", function() {
-          console.log("Clicked checkbox.");
-		var list = $("#input"+lID).val();
-		var array = list.split(',');
-		var points3D = new THREE.Geometry();
-		for (var i in array) {
-		    console.log("List " + array[i]);
-			points3D.vertices.push( // here you can use 3-dimensional coordinates
-			     new THREE.Vector3(objects[array[i]].position.x, objects[array[i]].position.y, objects[array[i]].position.z)
-			);
-		}
-		var line2 = new THREE.Line(points3D, new THREE.LineBasicMaterial({color: "red"}));
-		scene.add(line2);
-    });
-  });
-
-
-});
-</script>
+               //Create gui and handle gui events
+               function displayGUI() {
+                    var gui = new dat.GUI();
+                    function printArrays(boolean) {
+                         document.getElementById("printinfo").innerHTML = "Nose: " + noseArray
+                              + "\nL Eyebrow: " + leyebrowArray
+                              + "\nR Eyebrow: " + reyebrowArray
+                              + "\nL Eye: " + leyeArray
+                              + "\nR Eye: " + reyeArray
+                              + "\nL Ear: " + learArray
+                              + "\nR Ear: " + rearArray
+                              + "\nChin: " + chinArray;
+                         if (boolean == true) {
+                              document.getElementById("printinfo").style.display = "block";
+                         }
+                         else {
+                              document.getElementById("printinfo").style.display = "none";
+                         }
+                    }
+                    function showCmds(boolean) {
+                         if (boolean == true) {
+                              document.getElementById("cmds").innerHTML = "Click anywhere on label text field then type commands: " + "\nadd" + "\ndel"
+                                   + "\nThen press Enter";
+                              document.getElementById("cmds").style.display = "block";
+                         }
+                         else {
+                              document.getElementById("cmds").style.display = "none";
+                         }
+                    }
+                    function ObjBrowse(boolean) {
+                         document.getElementById("objBrowseInput").click();
+                         if (boolean == true) {
+                              //document.getElementById("cmds").innerHTML = "Click anywhere on label text field then type commands: " + "\nadd" + "\ndel"
+                              + "\nThen press Enter";
+                              //document.getElementById("cmds").style.display = "block";
+                         }
+                         else {
+                              //document.getElementById("cmds").style.display = "none";
+                         }
+                    }
+                    var str = "-";
+                    var controller = new function () {
+                         this.Nose = str;
+                         this.Leyebrow = str;
+                         this.Reyebrow = str;
+                         this.Leye = str;
+                         this.Reye = str;
+                         this.Lear = str;
+                         this.Rear = str;
+                         this.Chin = str;
+                         this.Save = function () {
+                              if (markerArray.length == 0)
+                                   alert("There are currently no markers to save.");
+                              else {
+                                   markerArray.sort(sortByState);
+                                   markerData = buildMarkerDataString(markerArray);
+                                   exportMarkerData();
+                              }
+                         };
+                         this.Load = function () {
+                              document.getElementById('markerFileInput').click();
+                         };
+                         this.Undo = function () {
+                              undoPreviousDeletion();
+                         }
+                         this.Reset = function () {
+                              resetStoredMarkerData();
+                              controller.Nose = str;
+                              controller.Leyebrow = str;
+                              controller.Reyebrow = str;
+                              controller.Leye = str;
+                              controller.Reye = str;
+                              controller.Lear = str;
+                              controller.Rear = str;
+                              controller.Chin = str;
+                         };
+                         this.nullCheck = function () {
+                              state = 0;
+                              document.getElementById("info").innerHTML = "Null State";
+                         };
+                         this.Print = false;
+                         this.Cmds = false;
+                         this.Wireframe = false;
+                         this.ObjBrowse = function () {
+                              document.getElementById("objBrowseInput").click();
+                         };
+                    }();
+                    //Regex for "add" and "del"
+                    function matches(locController, stateVal, name) {
+                         if (typeof locController === 'string') {
+                              if (locController.match(/add/i)) {
+                                   state = stateVal;
+                                   document.getElementById("info").innerHTML = "Add : " + name;
+                              }
+                              else if (locController.match(/del/i)) {
+                                   state = -stateVal;
+                                   document.getElementById("info").innerHTML = "Delete : " + name;
+                              }
+                              else {
+                                   state = 0;
+                                   document.getElementById("info").innerHTML = "Null State";
+                              }
+                         }
+                    }
+                    var labels = gui.addFolder('Labels');
+                    var methods = gui.addFolder('Methods');
+                    //Nose
+                    labels.add(controller, 'Nose', str).onFinishChange(function () {
+                         matches(controller.Nose, 1, "Nose");
+                         (controller.Nose) = noseArray;    //see verts/edges from array in gui
+                    }).listen();
+                    //Eyebrows
+                    labels.add(controller, 'Leyebrow', str).name('L eyebrow').onFinishChange(function () {
+                         matches(controller.Leyebrow, 2, "L eyebrow");
+                         (controller.Leyebrow) = leyebrowArray;
+                    }).listen();
+                    labels.add(controller, 'Reyebrow', str).name('R eyebrow').onFinishChange(function () {
+                         matches(controller.Reyebrow, 3, "R eyebrow");
+                         (controller.Reyebrow) = reyebrowArray;
+                    }).listen();
+                    //Eyes
+                    labels.add(controller, 'Leye', str).name('L eye').onFinishChange(function () {
+                         matches(controller.Leye, 4, "L eye");
+                         (controller.Leye) = leyeArray;
+                    }).listen();
+                    labels.add(controller, 'Reye', str).name('R eye').onFinishChange(function () {
+                         matches(controller.Reye, 5, "R eye");
+                         (controller.Reye) = reyeArray;
+                    }).listen();
+                    //Ears
+                    labels.add(controller, 'Lear', str).name('L ear').onFinishChange(function () {
+                         matches(controller.Lear, 6, "L ear");
+                         (controller.Lear) = learArray;
+                    }).listen();
+                    labels.add(controller, 'Rear', str).name('R ear').onFinishChange(function () {
+                         matches(controller.Rear, 7, "R ear");
+                         (controller.Rear) = rearArray;
+                    }).listen();
+                    //Chin
+                    labels.add(controller, 'Chin', str).onFinishChange(function () {
+                         matches(controller.Chin, 8, "Chin");
+                         (controller.Chin) = chinArray;
+                    }).listen();
+                    labels.add(controller, 'Undo', false).name('Undo Deletion');
+                    labels.add(controller, 'Reset', false).name('Reset All');
+                    labels.add(controller, 'nullCheck').name('Null State');//.onChange(function(){
+                    //state = 0;  //Null state  //});
+                    methods.add(controller, 'Print', false).name('Show Print').onChange(function () {
+                         printArrays(controller.Print);
+                    }).listen();
+                    methods.add(controller, 'Cmds', false).name('Show Commands').onChange(function () {
+                         showCmds(controller.Cmds);
+                    });
+                    methods.add(controller, 'Wireframe', false).onChange(function () {
+                         cubeMaterial.wireframe = controller.Wireframe;
+                    });
+                    methods.add(controller, 'ObjBrowse').name('Load Obj');
+                    methods.add(controller, 'Save', false).name('Export Markers');
+                    methods.add(controller, 'Load', false).name('Import Markers');
+                    gui.open();
+               }
+               function showLog() {
+                    /* var log = "Object Info...</br>Number of vertices: "+ sphereGeo.vertices.length;
+                        for (i = 0; i < sphereGeo.vertices.length; i++) {
+                          log+="</br> vertex["+i+"]: "+ sphereGeo.vertices[i].x+", "+ sphereGeo.vertices[i].y+ ", "+ sphereGeo.vertices[i].z;
+                        }
+                        document.getElementById("log").innerHTML=log;*/
+               }
+               function showLogLive() {
+                    var logLive = "Object Info...</br>Number of vertices: " + sphereGeo.vertices.length;
+                    logLive += "</br> Projected Vertex coordinates:";
+                    for (i = 0; i < sphereGeo.vertices.length; i++) {
+                         var proj = createVector(sphereGeo.vertices[i].x, sphereGeo.vertices[i].y, sphereGeo.vertices[i].z, camera, renderer.context.canvas.width, renderer.context.canvas.height);
+                         logLive += "</br> vertex[" + i + "]: " + proj.x + ", " + proj.y;
+                    }
+                    document.getElementById("logLive").innerHTML = logLive;
+               }
+               function showCoords(event) {
+                    var vector = new THREE.Vector3();
+                    vector.set(
+                         (event.clientX / window.innerWidth) * 2 - 1,
+                         - (event.clientY / window.innerHeight) * 2 + 1, 0.5
+                    );
+                    vector.unproject(camera);
+                    var dir = vector.sub(camera.position).normalize();
+                    var distance = - camera.position.z / dir.z;
+                    var pos = camera.position.clone().add(dir.multiplyScalar(distance));
+                    var pos2 = createVector(pos.x, pos.y, 0, camera, window.innerWidth, window.height);
+                    alert(pos2.x + " " + pos2.y);
+               }
+               function printArraysLive() {
+                    document.getElementById("printinfo").innerHTML = "Nose: " + noseArray
+                         + "\nL Eyebrow: " + leyebrowArray
+                         + "\nR Eyebrow: " + reyebrowArray
+                         + "\nL Eye: " + leyeArray
+                         + "\nR Eye: " + reyeArray
+                         + "\nL Ear: " + learArray
+                         + "\nR Ear: " + rearArray
+                         + "\nChin: " + chinArray;
+               }
+               function animate() {
+                    requestAnimationFrame(animate);
+                    update();
+                    render();
+                    stats.update();
+               }
+               function update() {
+                    control.update();
+                    printArraysLive();
+               }
+               function render() {
+                    renderer.render(scene, camera);
+               }
+               function onCameraChange() {
+                    //showLogLive();
+                    //var proj = toScreenPosition(sphereGeo.vertices[i], camera);
+                    //showLog();
+                    //document.getElementById("log").innerHTML+="</br> projected coordinate: "+proj.x+", "+proj.y;
+                    //var proj = toScreenPosition(divObj, camera);
+                    //divElem.style.left = proj.x + 'px';
+                    //divElem.style.top = proj.y + 'px';
+               }
+               function createVector(x, y, z, camera, width, height) {
+                    var p = new THREE.Vector3(x, y, z);
+                    var vector = p.project(camera);
+                    vector.x = (vector.x + 1) / 2 * width;
+                    vector.y = -(vector.y - 1) / 2 * height;
+                    return vector;
+               }
+          }//Part of onload function
+          var lastInputID;
+          var polyLineObjects = [];
+          $(document).ready(function () {
+               document.body.appendChild(stats.dom);
+               $("#btn2").click(function () {
+                    var lID = $("#labelName").val().replace(/\s/g, '');
+                    $("ol").append("<li>" + $("#labelName").val() + "</li><input placeholder='Click here then on sphere' id='input" + lID + "'><input type='checkbox' id='poly" + lID + "' value='show'> Show poly lines");
+                    $("#input" + lID).on("click", function () {
+                         console.log("Clicked input.");
+                         lastInputID = $(this).attr("id");
+                         console.log("Last input id: " + lastInputID);
+                    });
+                    $("#poly" + lID).on("click", function () {
+                         console.log("Clicked checkbox.");
+                         var list = $("#input" + lID).val();
+                         var array = list.split(',');
+                         var points3D = new THREE.Geometry();
+                         for (var i in array) {
+                              console.log("List " + array[i]);
+                              points3D.vertices.push( // here you can use 3-dimensional coordinates
+                                   new THREE.Vector3(objects[array[i]].position.x, objects[array[i]].position.y, objects[array[i]].position.z)
+                              );
+                         }
+                         var line2 = new THREE.Line(points3D, new THREE.LineBasicMaterial({ color: "red" }));
+                         scene.add(line2);
+                    });
+               });
+          });
+     </script>
      <style type="text/css">
-          html{
-                margin:0px;
-                height: 100%;
-                background-attachment: fixed;
-                background-size: cover;
-                background-repeat:no-repeat;
+          html {
+               margin: 0px;
+               height: 100%;
+               background-attachment: fixed;
+               background-size: cover;
+               background-repeat: no-repeat;
           }
+
           body {
                min-height: 100%;
-               margin:0px;
+               margin: 0px;
                background-attachment: fixed;
           }
+
+
           #cmds {
                position: absolute;
                top: 0px;
@@ -879,13 +1179,15 @@ $(document).ready(function(){
                width: 200px;
                display: none;
                border: 1px solid black;
-               border-radius:3px;
+               border-radius: 3px;
                color: #ffffff;
-               background-color:  #515a5a;
+               background-color: #515a5a;
                padding: 7px 7px 7px 7px;
-              font-family: arial;
-              box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-         }
+               font-family: arial;
+               box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+          }
+
+
           #printinfo {
                position: absolute;
                top: 120px;
@@ -897,38 +1199,45 @@ $(document).ready(function(){
                z-index: 100;
                display: none;
                border: 1px solid black;
-               border-radius:3px;
+               border-radius: 3px;
                color: #ffffff;
-               background-color:  #515a5a;
+               background-color: #515a5a;
+
                padding: 7px 7px 7px 7px;
                font-family: arial;
                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
           }
+
           #info {
                position: absolute;
                top: 80px;
                left: 10px;
                text-align: left;
                z-index: 100;
-               display:block;
+
+               display: block;
                border: 1px solid black;
-               border-radius:3px;
+               border-radius: 3px;
                color: #ffffff;
-               background-color:  #515a5a;
+               background-color: #515a5a;
+
                padding: 7px 7px 7px 7px;
                font-family: arial;
                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
           }
+
           .leftPanel {
                color: white;
                position: absolute;
                Left: 10px;
                overflow-y: hidden;
           }
+
           .rightPanel {
-              color: yellow;
-              position: absolute;
-              right: 10px;
+               color: yellow;
+               position: absolute;
+               right: 10px;
+
           }
      </style>
 </head>
@@ -936,13 +1245,17 @@ $(document).ready(function(){
      <div id="info">Null State</div>
      <div id="printinfo">Print</div>
      <div id="cmds">Commands</div>
-	 <input style="display:none;" type="file" id="objBrowseInput"/>
+
+     <input style="display:none;" type="file" id="objBrowseInput" />
+     <input style="display:none;" type="file" accept='text/plain' id="markerFileInput" />
+     <textarea id="markerText" hidden=true></textarea>
      <div class="leftPanel">
-          <div id="log" ></div>
+          <div id="log"></div>
      </div>
 
 
- <!--
+     <!--
+
   <style type="text/css">
   #info {
   	position: absolute;
@@ -955,9 +1268,7 @@ $(document).ready(function(){
     color: #ffffff
   }
   </style>
-
   <div id="printinfo">Print</div>
-
   <style type="text/css">
   #printinfo {
     position: absolute;
@@ -973,9 +1284,7 @@ $(document).ready(function(){
     color: #ffffff
   }
   </style>
-
   <div id="cmds">Commands</div>
-
   <style type="text/css">
   #cmds {
     position: absolute;
@@ -994,10 +1303,11 @@ $(document).ready(function(){
 
 
      <div class="rightPanel">
-          <div id="logLive" ></div>
-     <!--<ol>
+          <div id="logLive"></div>
+          <!--<ol>
+
 	</ol>-->
- <!--<select id="labelName">
+          <!--<select id="labelName">
 		<option>hair line</option>
 		<option>left eye brow</option>
 		<option>right eye brow</option>
@@ -1013,4 +1323,6 @@ $(document).ready(function(){
 
      </div>
 </body>
+
+
 </html>
