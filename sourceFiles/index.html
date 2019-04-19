@@ -95,13 +95,13 @@
                     displayGUI(); //function call for gui
                     //showCoords(event);
                     //document.addEventListener("click", showCoords);
-selectElement = document.querySelector('#objBrowseInput');
-		    selectElement.addEventListener('change', (event) => {
+		selectElement = document.querySelector('#objBrowseInput');
+		selectElement.addEventListener('change', (event) => {
 				//const result = document.querySelector('.result');
 				//result.textContent = `You like ${event.target.value}`;
 			//alert(document.getElementById("objBrowseInput").files[0].path);
-			var fullPath = document.getElementById('objBrowseInput').value;
-		    var filename;
+			var fullPath = event.target.files[0];//document.getElementById('objBrowseInput').value;
+		    var filename = fullPath;/*
 			if (fullPath) {
 				var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
 				filename = fullPath.substring(startIndex);
@@ -109,25 +109,109 @@ selectElement = document.querySelector('#objBrowseInput');
 					filename = filename.substring(1);
 				}
 				//alert(fullPath);
-			}
+			}*/
+			var file    = selectElement.files[0];
+			var reader  = new FileReader();
 
+			
+			//alert(fullPath);
 		  
 		    if(window.location.href.includes('?')){
 				var filenamex = window.location.href.split("?");
 				window.location.href = filenamex[0] + "?" + filename;
 				//if(filenamex.length == 1){filenamex[1]='face.obj';}
 			} else{
-				window.location.href = window.location.href + "?" + filename;
+				//window.location.href = window.location.href + "?" + filename;
 			}
+			
+			/*Garbage Collection*/
+			delete objects;
+			objects = [];
+			while(scene.children.length > 0){ 
+				scene.remove(scene.children[0]); 
+			}
+			/*End of garbage collection*/
+		reader.addEventListener("load", function () {
+			loader.load(
+                              // resource URL
+                              reader.result,
+                              // called when resource is loaded
+                              function (obje) {
+                                   var material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: false });
+                                   obje.traverse(function (child) {
+                                        if (child.isMesh) {
+                                             child.material = material;
+                                        }
+                                   });
+                                   //scene.add( obje );
+                                   var bb = new THREE.Box3()
+                                   bb.setFromObject(obje);
+                                   bb.getCenter(control.target);
+                                   var cubeGeo = new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
+                                   cubeGeo.mergeVertices();  //removes duplicate vertices
+                                   //cubeGeo.center();
+                                   //var cubeGeo =  obje.children[0].geometry;//new THREE.Geometry().fromBufferGeometry(obje.children[0].geometry);
+                                   /*Start of Spheres*/
+                                   //cubeGeo = new THREE.SphereGeometry(1,7,7);
+                                   sphereGeo = cubeGeo;
+                                   //var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0x0000ff, wireframe: false} );
+                                   var cubeMesh = new THREE.Mesh(sphereGeo, cubeMaterial); //obje.children[0].materials);
+                                   console.log("verts: " + cubeMesh.geometry.vertices.length);
+                                   numOfVertices = cubeMesh.geometry.vertices.length;
+                                   var eGeometry = new THREE.EdgesGeometry(cubeMesh.geometry);
+                                   var eMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 1 });
+                                   var edges = new THREE.LineSegments(eGeometry, eMaterial);
+                                   //cubeMesh.add( edges );
+                                   scene.add(cubeMesh);
+                                   //add spheres to mesh, push to objects[], add to scene
+                                   sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
+                                   console.log("objects size: " + objects.length);
+                                   //console.log( "Geometry: "+cubeMesh.geometry.isGeometry );
+                                   //var ageometry = new THREE.Geometry().fromBufferGeometry( cubeMesh.geometry );
+                                   var edgelist = getEdges(cubeMesh.geometry);//cubeMesh.geometry
+                                   //console.log("edgelist: "+edgelist.length);
+                                   for (var i = 0; i < cubeMesh.geometry.vertices.length; i++) {
+                                        eu = edgelist[i].filter(onlyUnique);
+                                        //console.log("edgelist: "+i+": "+eu);
+                                        for (var j = 0; j < eu.length; j++) {
+                                             //console.log("e: "+i+","+eu[j]);
+                                             var cyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                                             var cylinder = cylinderMesh(cubeGeo.vertices[i], cubeGeo.vertices[eu[j]], cyMaterial);
+                                             scene.add(cylinder);
+                                             objects.push(cylinder);
+                                             objects[cylinder.uuid] = cylinder;
+                                        }
+                                   }
+                                   console.log("objects size: " + objects.length);
+                                   console.log("edges: " + (objects.length - cubeMesh.geometry.vertices.length));
+                                   //add spheres to mesh, push to objects[], add to scene
+                                   //sphereMesh(cubeMesh, objects, scene); //Custom sphereMesh function
+                              },
+                              // called when loading is in progresses
+                              function (xhr) {
+                                   console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                              },
+                              // called when loading has errors
+                              function (error) {
+                                   console.log('An error happened');
+                              }
+                         );
+				}
+				, false);
+			/*=============End of 1st loader.load=============*/
+			if (file) {
+				reader.readAsDataURL(file);
+			}
+			
 
 		});
                       //alert(window.location.href);
 	 var filenamex = window.location.href.split("?");
-	 if(filenamex.length == 1){filenamex[1]='face.obj';}
+	 if(filenamex.length == 1){filenamex[1]='obj/'+'face.obj';}
                          //return filename;
                          loader.load(
                               // resource URL
-                              'obj/'+filenamex[1],
+                              filenamex[1],
                               // called when resource is loaded
                               function (obje) {
                                    var material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: false });
