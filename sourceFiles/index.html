@@ -89,7 +89,7 @@
                     var light = new THREE.PointLight(0xffffff, 1, 20);
                     light.position.set(0, 0, 2);
                     scene.add(light);
-                 
+
                     //console.log("objects size: "+ objects.length);
                     //showLog();
                     displayGUI(); //function call for gui
@@ -113,9 +113,9 @@
 			var file    = selectElement.files[0];
 			var reader  = new FileReader();
 
-			
+
 			//alert(fullPath);
-		  
+
 		    if(window.location.href.includes('?')){
 				var filenamex = window.location.href.split("?");
 				window.location.href = filenamex[0] + "?" + filename;
@@ -123,12 +123,12 @@
 			} else{
 				//window.location.href = window.location.href + "?" + filename;
 			}
-			
+
 			/*Garbage Collection*/
 			delete objects;
 			objects = [];
-			while(scene.children.length > 0){ 
-				scene.remove(scene.children[0]); 
+			while(scene.children.length > 0){
+				scene.remove(scene.children[0]);
 			}
 			/*End of garbage collection*/
 		reader.addEventListener("load", function () {
@@ -202,7 +202,7 @@
 			if (file) {
 				reader.readAsDataURL(file);
 			}
-			
+
 
 		});
                       //alert(window.location.href);
@@ -543,10 +543,26 @@
                          array.pop();
                     }
                }
+
+               /* Refresh colored points to default colors based on numOfVertices */
+               function refreshColors(){
+                 for(i = 0; i < objects.length; i++){
+                   if(i < sphereGeo.vertices.length){
+                     objects[i].material.color.setHex(0x43a242);
+                   }
+                   else{
+                     objects[i].material.color.setHex(0xffffff);
+                   }
+                 }
+               }
+
                /*Reset marker variables for when user wants to restart marking the data again.*/
                function resetStoredMarkerData() {
                     console.log(markerArray);
                     eraseArray(markerArray);
+                    if(markerArray.length < 1){
+                      refreshColors();
+                    }
                     eraseArray(delMarkerArr);
                     eraseArray(noseArray);
                     eraseArray(leyebrowArray);
@@ -729,7 +745,7 @@
                          for (var j = 0; j < arr.length; j++) {
                               if (arr[j] == k) {
                                    arr.splice(j, 1);
-                                   if (k <= sphereGeo.vertices.length) {
+                                   if (k < sphereGeo.vertices.length) {
                                         objects[k].material.color.setHex(0x43a242);
                                    }
                                    else {
@@ -1310,4 +1326,3 @@
 
 
 </html>
-
